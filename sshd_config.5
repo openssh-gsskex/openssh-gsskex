@@ -794,7 +794,19 @@ during
 and use only the system-wide known hosts file
 .Pa /etc/ssh/known_hosts .
 The default is
-.Cm no .
+.Dq no .
+.It Cm Include
+Include the specified configuration file(s).
+Multiple path names may be specified and each pathname may contain
+.Xr glob 7
+wildcards.
+Files without absolute paths are assumed to be in
+.Pa /etc/ssh .
+.Cm Include
+directive may appear inside a
+.Cm Match
+block
+to perform conditional inclusion.
 .It Cm IPQoS
 Specifies the IPv4 type-of-service or DSCP class for the connection.
 Accepted values are

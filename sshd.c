@@ -250,6 +250,13 @@ struct sshauthopt *auth_opts = NULL;
 /* sshd_config buffer */
 struct sshbuf *cfg;
 
+/* Included files from the configuration file */
+struct include_list includes = {
+	.count = 0,
+	.start = NULL,
+	.end = NULL,
+};
+
 /* message to be displayed after login */
 struct sshbuf *loginmsg;
 
@@ -852,7 +859,8 @@ usage(void)
 static void
 send_rexec_state(int fd, struct sshbuf *conf)
 {
-	struct sshbuf *m;
+	struct sshbuf *m = NULL;
+	struct include_item *item = NULL;
 	int r;
 
 	debug3("%s: entering fd = %d config len %zu", __func__, fd,
@@ -867,6 +875,14 @@ send_rexec_state(int fd, struct sshbuf *conf)
 		fatal("%s: sshbuf_new failed", __func__);
 	if ((r = sshbuf_put_stringb(m, conf)) != 0)
 		fatal("%s: buffer error: %s", __func__, ssh_err(r));
+	if ((r = sshbuf_put_u16(m, includes.count)) != 0)
+		fatal("%s: buffer error: %s", __func__, ssh_err(r));
+	for (item = includes.start; item != NULL; item = item->next) {
+		if ((r = sshbuf_put_cstring(m, item->selector)) != 0 ||
+		    (r = sshbuf_put_cstring(m, item->filename)) != 0 ||
+		    (r = sshbuf_put_stringb(m, item->buffer)) != 0)
+			fatal("%s: buffer error: %s", __func__, ssh_err(r));
+	}
 
 #if defined(WITH_OPENSSL) && !defined(OPENSSL_PRNG_ONLY)
 	rexec_send_rng_seed(m);
@@ -886,7 +902,7 @@ recv_rexec_state(int fd, struct sshbuf *conf)
 	struct sshbuf *m;
 	u_char *cp, ver;
 	size_t len;
-	int r;
+	int r, i;
 
 	debug3("%s: entering fd = %d", __func__, fd);
 
@@ -905,6 +921,25 @@ recv_rexec_state(int fd, struct sshbuf *conf)
 #if defined(WITH_OPENSSL) && !defined(OPENSSL_PRNG_ONLY)
 	rexec_recv_rng_seed(m);
 #endif
+	if ((r = sshbuf_get_u16(m, &includes.count)) != 0)
+		fatal("%s: buffer error: %s", __func__, ssh_err(r));
+	for (i = 0; i < includes.count; i++) {
+		struct include_item *item = calloc(1, sizeof(struct include_item));
+
+		if (item == NULL)
+			fatal("%s: Failed to allocate memory.", __func__);
+		if ((item->buffer = sshbuf_new()) == NULL)
+			fatal("%s: sshbuf_new failed", __func__);
+		if ((r = sshbuf_get_cstring(m, &item->selector, NULL)) != 0 ||
+		    (r = sshbuf_get_cstring(m, &item->filename, NULL)) != 0 ||
+		    (r = sshbuf_get_stringb(m, item->buffer)) != 0)
+			fatal("%s: buffer error: %s", __func__, ssh_err(r));
+		if (includes.start == NULL)
+			includes.start = item;
+		if (includes.end != NULL)
+			includes.end->next = item;
+		includes.end = item;
+	}
 
 	free(cp);
 	sshbuf_free(m);
@@ -1564,7 +1599,7 @@ main(int ac, char **av)
 		case 'o':
 			line = xstrdup(optarg);
 			if (process_server_config_line(&options, line,
-			    "command-line", 0, NULL, NULL) != 0)
+			    "command-line", 0, NULL, NULL, &includes) != 0)
 				exit(1);
 			free(line);
 			break;
@@ -1633,7 +1668,7 @@ main(int ac, char **av)
 		load_server_config(config_file_name, cfg);
 
 	parse_server_config(&options, rexeced_flag ? "rexec" : config_file_name,
-	    cfg, NULL);
+	    cfg, &includes, NULL);
 
 	/* Fill in default values for those options not explicitly set. */
 	fill_default_server_options(&options);
@@ -1843,7 +1878,7 @@ main(int ac, char **av)
 		 */
 		if (connection_info == NULL)
 			connection_info = get_connection_info(ssh, 0, 0);
-		parse_server_match_config(&options, connection_info);
+		parse_server_match_config(&options, &includes, connection_info);
 		dump_config(&options);
 	}
 

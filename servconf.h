@@ -223,6 +223,19 @@ struct connection_info {
 	const char *rdomain;	/* routing domain if available */
 };
 
+/* List of included files for re-exec from the parsed configuration */
+struct include_item {
+	char *selector;
+	char *filename;
+	struct sshbuf *buffer;
+	struct include_item *next;
+};
+struct include_list {
+	u_int16_t count;
+	struct include_item *start;
+	struct include_item *end;
+};
+
 
 /*
  * These are string config options that must be copied between the
@@ -262,12 +275,13 @@ struct connection_info *get_connection_info(struct ssh *, int, int);
 void	 initialize_server_options(ServerOptions *);
 void	 fill_default_server_options(ServerOptions *);
 int	 process_server_config_line(ServerOptions *, char *, const char *, int,
-	     int *, struct connection_info *);
+	     int *, struct connection_info *, struct include_list *includes);
 void	 process_permitopen(struct ssh *ssh, ServerOptions *options);
 void	 load_server_config(const char *, struct sshbuf *);
 void	 parse_server_config(ServerOptions *, const char *, struct sshbuf *,
-	     struct connection_info *);
-void	 parse_server_match_config(ServerOptions *, struct connection_info *);
+	     struct include_list *includes, struct connection_info *);
+void	 parse_server_match_config(ServerOptions *,
+	     struct include_list *includes, struct connection_info *);
 int	 parse_server_match_testspec(struct connection_info *, char *);
 int	 server_match_spec_complete(struct connection_info *);
 void	 copy_set_server_options(ServerOptions *, ServerOptions *, int);

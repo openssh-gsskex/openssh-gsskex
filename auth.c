@@ -79,6 +79,7 @@
 
 /* import */
 extern ServerOptions options;
+extern struct include_list includes;
 extern int use_privsep;
 extern struct sshbuf *loginmsg;
 extern struct passwd *privsep_pw;
@@ -571,7 +572,7 @@ getpwnamallow(struct ssh *ssh, const char *user)
 
 	ci = get_connection_info(ssh, 1, options.use_dns);
 	ci->user = user;
-	parse_server_match_config(&options, ci);
+	parse_server_match_config(&options, &includes, ci);
 	log_change_level(options.log_level);
 	process_permitopen(ssh, &options);
 
