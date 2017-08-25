@@ -148,7 +148,8 @@ ssh_gssapi_server_mechanisms(void) {
 	if (supported_oids == NULL)
 		ssh_gssapi_prepare_supported_oids();
 	return (ssh_gssapi_kex_mechs(supported_oids,
-	    &ssh_gssapi_server_check_mech, NULL, NULL));
+	    &ssh_gssapi_server_check_mech, NULL, NULL,
+	    options.gss_kex_algorithms));
 }
 
 /* Unprivileged */
