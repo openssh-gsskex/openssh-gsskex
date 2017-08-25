@@ -92,7 +92,8 @@ ssh_gssapi_get_buffer_desc(struct sshbuf *b, gss_buffer_desc *g)
  */
 
 char *
-ssh_gssapi_client_mechanisms(const char *host, const char *client) {
+ssh_gssapi_client_mechanisms(const char *host, const char *client,
+    const char *kex) {
 	gss_OID_set gss_supported;
 	OM_uint32 min_status;
 
@@ -100,12 +101,12 @@ ssh_gssapi_client_mechanisms(const char *host, const char *client) {
 		return NULL;
 
 	return(ssh_gssapi_kex_mechs(gss_supported, ssh_gssapi_check_mechanism,
-	    host, client));
+	    host, client, kex));
 }
 
 char *
 ssh_gssapi_kex_mechs(gss_OID_set gss_supported, ssh_gssapi_check_fn *check,
-    const char *host, const char *client) {
+    const char *host, const char *client, const char *kex) {
 	struct sshbuf *buf = NULL;
 	size_t i;
 	int r, oidpos, enclen;
@@ -113,6 +114,7 @@ ssh_gssapi_kex_mechs(gss_OID_set gss_supported, ssh_gssapi_check_fn *check,
 	u_char digest[SSH_DIGEST_MAX_LENGTH];
 	char deroid[2];
 	struct ssh_digest_ctx *md = NULL;
+	char *s, *cp, *p;
 
 	if (gss_enc2oid != NULL) {
 		for (i = 0; gss_enc2oid[i].encoded != NULL; i++)
@@ -127,6 +129,7 @@ ssh_gssapi_kex_mechs(gss_OID_set gss_supported, ssh_gssapi_check_fn *check,
 		fatal("%s: sshbuf_new failed", __func__);
 
 	oidpos = 0;
+	s = cp = xstrdup(kex);
 	for (i = 0; i < gss_supported->count; i++) {
 		if (gss_supported->elements[i].length < 128 &&
 		    (*check)(NULL, &(gss_supported->elements[i]), host, client)) {
@@ -149,28 +152,25 @@ ssh_gssapi_kex_mechs(gss_OID_set gss_supported, ssh_gssapi_check_fn *check,
 			    ssh_digest_bytes(SSH_DIGEST_MD5), encoded,
 			    ssh_digest_bytes(SSH_DIGEST_MD5) * 2);
 
-			if (oidpos != 0 &&
-			    (r = sshbuf_put_u8(buf, ',')) != 0)
-				fatal("%s: sshbuf_put_u8 failed", __func__);
-
-			if ((r = sshbuf_put(buf, KEX_GSS_GEX_SHA1_ID,
-			        sizeof(KEX_GSS_GEX_SHA1_ID) - 1)) != 0 ||
-			    (r = sshbuf_put(buf, encoded, enclen)) != 0 ||
-			    (r = sshbuf_put_u8(buf, ',')) != 0 ||
-			    (r = sshbuf_put(buf, KEX_GSS_GRP1_SHA1_ID,
-			        sizeof(KEX_GSS_GRP1_SHA1_ID) - 1)) != 0 ||
-			    (r = sshbuf_put(buf, encoded, enclen)) != 0 ||
-			    (r = sshbuf_put_u8(buf, ',')) != 0 ||
-			    (r = sshbuf_put(buf, KEX_GSS_GRP14_SHA1_ID,
-			        sizeof(KEX_GSS_GRP14_SHA1_ID) - 1)) != 0 ||
-			    (r = sshbuf_put(buf, encoded, enclen)) != 0)
-				fatal("%s: sshbuf_put failed", __func__);
+			cp = strncpy(s, kex, strlen(kex));
+			for ((p = strsep(&cp, ",")); p && *p != '\0';
+				(p = strsep(&cp, ","))) {
+				if (sshbuf_len(buf) != 0 &&
+				    (r = sshbuf_put_u8(buf, ',')) != 0)
+					fatal("%s: sshbuf_put_u8 error: %s",
+					    __func__, ssh_err(r));
+				if ((r = sshbuf_put(buf, p, strlen(p))) != 0 ||
+				    (r = sshbuf_put(buf, encoded, enclen)) != 0)
+					fatal("%s: sshbuf_put error: %s",
+					    __func__, ssh_err(r));
+			}
 
 			gss_enc2oid[oidpos].oid = &(gss_supported->elements[i]);
 			gss_enc2oid[oidpos].encoded = encoded;
 			oidpos++;
 		}
 	}
+	free(s);
 	gss_enc2oid[oidpos].oid = NULL;
 	gss_enc2oid[oidpos].encoded = NULL;
 
