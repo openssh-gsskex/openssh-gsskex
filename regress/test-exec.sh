@@ -535,8 +535,8 @@ maybe_filter_sk() {
 	fi
 }
 
-SSH_KEYTYPES=`$SSH -Q key-plain | maybe_filter_sk`
-SSH_HOSTKEY_TYPES=`$SSH -Q key-plain | maybe_filter_sk`
+SSH_KEYTYPES=`$SSH -Q key-plain | grep -v null | maybe_filter_sk`
+SSH_HOSTKEY_TYPES=`$SSH -Q key-plain | grep -v null | maybe_filter_sk`
  
 for t in ${SSH_KEYTYPES}; do
 	# generate user key

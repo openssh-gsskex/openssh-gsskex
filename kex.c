@@ -62,6 +62,10 @@
 #include "sshbuf.h"
 #include "digest.h"
 
+#ifdef GSSAPI
+#include "ssh-gss.h"
+#endif
+
 /* prototype */
 static int kex_choose_conf(struct ssh *);
 static int kex_input_newkeys(int, u_int32_t, struct ssh *);
@@ -113,6 +117,11 @@ static const struct kexalg kexalgs[] = {
 	{ KEX_SNTRUP4591761X25519_SHA512, KEX_KEM_SNTRUP4591761X25519_SHA512, 0,
 	    SSH_DIGEST_SHA512 },
 #endif /* HAVE_EVP_SHA256 || !WITH_OPENSSL */
+#ifdef GSSAPI
+	{ KEX_GSS_GEX_SHA1_ID, KEX_GSS_GEX_SHA1, 0, SSH_DIGEST_SHA1 },
+	{ KEX_GSS_GRP1_SHA1_ID, KEX_GSS_GRP1_SHA1, 0, SSH_DIGEST_SHA1 },
+	{ KEX_GSS_GRP14_SHA1_ID, KEX_GSS_GRP14_SHA1, 0, SSH_DIGEST_SHA1 },
+#endif
 	{ NULL, 0, -1, -1},
 };
 
@@ -146,6 +155,12 @@ kex_alg_by_name(const char *name)
 	for (k = kexalgs; k->name != NULL; k++) {
 		if (strcmp(k->name, name) == 0)
 			return k;
+#ifdef GSSAPI
+		if (strncmp(name, "gss-", 4) == 0) {
+			if (strncmp(k->name, name, strlen(k->name)) == 0)
+				return k;
+		}
+#endif
 	}
 	return NULL;
 }
@@ -698,6 +713,9 @@ kex_free(struct kex *kex)
 	sshbuf_free(kex->server_version);
 	sshbuf_free(kex->client_pub);
 	free(kex->session_id);
+#ifdef GSSAPI
+	free(kex->gss_host);
+#endif /* GSSAPI */
 	free(kex->failed_choice);
 	free(kex->hostkey_alg);
 	free(kex->name);
