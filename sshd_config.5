@@ -681,6 +681,18 @@ or updated credentials from a compatible client. The default is
 For this to work
 .Cm GSSAPIKeyExchange
 needs to be enabled in the server and also used by the client.
+.It Cm GSSAPIKexAlgorithms
+The list of key exchange algorithms that are accepted by GSSAPI
+key exchange. Possible values are
+.Bd -literal -offset 3n
+gss-gex-sha1-,
+gss-group1-sha1-,
+gss-group14-sha1-
+.Ed
+.Pp
+The default is
+.Dq gss-gex-sha1-,gss-group14-sha1- .
+This option only applies to protocol version 2 connections using GSSAPI.
 .It Cm HostbasedAcceptedKeyTypes
 Specifies the key types that will be accepted for hostbased authentication
 as a list of comma-separated patterns.

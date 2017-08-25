@@ -55,6 +55,7 @@
 #include "misc.h"
 #include "dispatch.h"
 #include "monitor.h"
+#include "xmalloc.h"
 
 #include "ssherr.h"
 #include "sshbuf.h"
@@ -314,6 +315,29 @@ kex_assemble_names(char **listp, const char *def, const char *all)
 	free(list);
 	free(ret);
 	return r;
+}
+
+/* Validate GSS KEX method name list */
+int
+gss_kex_names_valid(const char *names)
+{
+	char *s, *cp, *p;
+
+	if (names == NULL || *names == '\0')
+		return 0;
+	s = cp = xstrdup(names);
+	for ((p = strsep(&cp, ",")); p && *p != '\0';
+	    (p = strsep(&cp, ","))) {
+		if (strncmp(p, "gss-", 4) != 0
+		  || kex_alg_by_name(p) == NULL) {
+			error("Unsupported KEX algorithm \"%.100s\"", p);
+			free(s);
+			return 0;
+		}
+	}
+	debug3("gss kex names ok: [%s]", names);
+	free(s);
+	return 1;
 }
 
 /* put algorithm proposal into buffer */

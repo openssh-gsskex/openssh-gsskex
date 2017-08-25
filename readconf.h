@@ -46,6 +46,7 @@ typedef struct {
 	int	gss_renewal_rekey;	/* Credential renewal forces rekey */
 	char    *gss_client_identity;   /* Principal to initiate GSSAPI with */
 	char    *gss_server_identity;   /* GSSAPI target principal */
+	char    *gss_kex_algorithms;	/* GSSAPI kex methods to be offered by client. */
 	int     password_authentication;	/* Try password
 						 * authentication. */
 	int     kbd_interactive_authentication; /* Try keyboard-interactive auth. */

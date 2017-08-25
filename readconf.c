@@ -67,6 +67,7 @@
 #include "uidswap.h"
 #include "myproposal.h"
 #include "digest.h"
+#include "ssh-gss.h"
 
 /* Format of the configuration file:
 
@@ -163,7 +164,7 @@ typedef enum {
 	oEnableSSHKeysign, oRekeyLimit, oVerifyHostKeyDNS, oConnectTimeout,
 	oAddressFamily, oGssAuthentication, oGssDelegateCreds,
 	oGssTrustDns, oGssKeyEx, oGssClientIdentity, oGssRenewalRekey,
-	oGssServerIdentity, 
+	oGssServerIdentity, oGssKexAlgorithms,
 	oServerAliveInterval, oServerAliveCountMax, oIdentitiesOnly,
 	oSendEnv, oSetEnv, oControlPath, oControlMaster, oControlPersist,
 	oHashKnownHosts,
@@ -210,6 +211,7 @@ static struct {
 	{ "gssapiclientidentity", oGssClientIdentity },
 	{ "gssapiserveridentity", oGssServerIdentity },
 	{ "gssapirenewalforcesrekey", oGssRenewalRekey },
+	{ "gssapikexalgorithms", oGssKexAlgorithms },
 # else
 	{ "gssapiauthentication", oUnsupported },
 	{ "gssapikeyexchange", oUnsupported },
@@ -217,6 +219,7 @@ static struct {
 	{ "gssapitrustdns", oUnsupported },
 	{ "gssapiclientidentity", oUnsupported },
 	{ "gssapirenewalforcesrekey", oUnsupported },
+	{ "gssapikexalgorithms", oUnsupported },
 #endif
 #ifdef ENABLE_PKCS11
 	{ "pkcs11provider", oPKCS11Provider },
@@ -1017,6 +1020,18 @@ parse_time:
 	case oGssRenewalRekey:
 		intptr = &options->gss_renewal_rekey;
 		goto parse_flag;
+
+	case oGssKexAlgorithms:
+		arg = strdelim(&s);
+		if (!arg || *arg == '\0')
+			fatal("%.200s line %d: Missing argument.",
+			    filename, linenum);
+		if (!gss_kex_names_valid(arg))
+			fatal("%.200s line %d: Bad GSSAPI KexAlgorithms '%s'.",
+			    filename, linenum, arg ? arg : "<NONE>");
+		if (*activep && options->gss_kex_algorithms == NULL)
+			options->gss_kex_algorithms = xstrdup(arg);
+		break;
 
 	case oBatchMode:
 		intptr = &options->batch_mode;
@@ -1891,6 +1906,7 @@ initialize_options(Options * options)
 	options->gss_renewal_rekey = -1;
 	options->gss_client_identity = NULL;
 	options->gss_server_identity = NULL;
+	options->gss_kex_algorithms = NULL;
 	options->password_authentication = -1;
 	options->kbd_interactive_authentication = -1;
 	options->kbd_interactive_devices = NULL;
@@ -2044,6 +2060,10 @@ fill_default_options(Options * options)
 		options->gss_trust_dns = 0;
 	if (options->gss_renewal_rekey == -1)
 		options->gss_renewal_rekey = 0;
+#ifdef GSSAPI
+	if (options->gss_kex_algorithms == NULL)
+		options->gss_kex_algorithms = strdup(GSS_KEX_DEFAULT_KEX);
+#endif
 	if (options->password_authentication == -1)
 		options->password_authentication = 1;
 	if (options->kbd_interactive_authentication == -1)
@@ -2664,6 +2684,8 @@ dump_client_config(Options *o, const char *host)
 	dump_cfg_fmtint(oGssRenewalRekey, o->gss_renewal_rekey);
 	dump_cfg_string(oGssClientIdentity, o->gss_client_identity);
 	dump_cfg_string(oGssServerIdentity, o->gss_server_identity);
+	dump_cfg_string(oGssKexAlgorithms, o->gss_kex_algorithms ?
+	    o->gss_kex_algorithms : GSS_KEX_DEFAULT_KEX);
 #endif /* GSSAPI */
 	dump_cfg_fmtint(oHashKnownHosts, o->hash_known_hosts);
 	dump_cfg_fmtint(oHostbasedAuthentication, o->hostbased_authentication);

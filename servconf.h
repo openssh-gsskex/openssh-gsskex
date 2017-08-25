@@ -130,6 +130,7 @@ typedef struct {
 	int     gss_cleanup_creds;	/* If true, destroy cred cache on logout */
 	int     gss_strict_acceptor;	/* If true, restrict the GSSAPI acceptor name */
 	int 	gss_store_rekey;
+	char   *gss_kex_algorithms;	/* GSSAPI kex methods to be offered by client. */
 	int     password_authentication;	/* If true, permit password
 						 * authentication. */
 	int     kbd_interactive_authentication;	/* If true, permit */

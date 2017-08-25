@@ -72,6 +72,10 @@
 #define KEX_GSS_GRP14_SHA1_ID				"gss-group14-sha1-"
 #define KEX_GSS_GEX_SHA1_ID				"gss-gex-sha1-"
 
+#define        GSS_KEX_DEFAULT_KEX \
+	KEX_GSS_GEX_SHA1_ID "," \
+	KEX_GSS_GRP14_SHA1_ID
+
 typedef struct {
 	char *filename;
 	char *envvar;
@@ -147,9 +151,9 @@ int ssh_gssapi_credentials_updated(Gssctxt *);
 /* In the server */
 typedef int ssh_gssapi_check_fn(Gssctxt **, gss_OID, const char *,
     const char *);
-char *ssh_gssapi_client_mechanisms(const char *, const char *);
+char *ssh_gssapi_client_mechanisms(const char *, const char *, const char *);
 char *ssh_gssapi_kex_mechs(gss_OID_set, ssh_gssapi_check_fn *, const char *,
-    const char *);
+    const char *, const char *);
 gss_OID ssh_gssapi_id_kex(Gssctxt *, char *, int);
 int ssh_gssapi_server_check_mech(Gssctxt **,gss_OID, const char *,
     const char *);
