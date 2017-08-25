@@ -148,6 +148,8 @@ int mm_answer_gss_setup_ctx(struct ssh *, int, struct sshbuf *);
 int mm_answer_gss_accept_ctx(struct ssh *, int, struct sshbuf *);
 int mm_answer_gss_userok(struct ssh *, int, struct sshbuf *);
 int mm_answer_gss_checkmic(struct ssh *, int, struct sshbuf *);
+int mm_answer_gss_sign(struct ssh *, int, struct sshbuf *);
+int mm_answer_gss_updatecreds(struct ssh *, int, struct sshbuf *);
 #endif
 
 #ifdef SSH_AUDIT_EVENTS
@@ -220,11 +222,18 @@ struct mon_table mon_dispatch_proto20[] = {
     {MONITOR_REQ_GSSSTEP, 0, mm_answer_gss_accept_ctx},
     {MONITOR_REQ_GSSUSEROK, MON_ONCE|MON_AUTHDECIDE, mm_answer_gss_userok},
     {MONITOR_REQ_GSSCHECKMIC, MON_ONCE, mm_answer_gss_checkmic},
+    {MONITOR_REQ_GSSSIGN, MON_ONCE, mm_answer_gss_sign},
 #endif
     {0, 0, NULL}
 };
 
 struct mon_table mon_dispatch_postauth20[] = {
+#ifdef GSSAPI
+    {MONITOR_REQ_GSSSETUP, 0, mm_answer_gss_setup_ctx},
+    {MONITOR_REQ_GSSSTEP, 0, mm_answer_gss_accept_ctx},
+    {MONITOR_REQ_GSSSIGN, 0, mm_answer_gss_sign},
+    {MONITOR_REQ_GSSUPCREDS, 0, mm_answer_gss_updatecreds},
+#endif
 #ifdef WITH_OPENSSL
     {MONITOR_REQ_MODULI, 0, mm_answer_moduli},
 #endif
@@ -293,6 +302,10 @@ monitor_child_preauth(struct ssh *ssh, struct monitor *pmonitor)
 	/* Permit requests for moduli and signatures */
 	monitor_permit(mon_dispatch, MONITOR_REQ_MODULI, 1);
 	monitor_permit(mon_dispatch, MONITOR_REQ_SIGN, 1);
+#ifdef GSSAPI
+	/* and for the GSSAPI key exchange */
+	monitor_permit(mon_dispatch, MONITOR_REQ_GSSSETUP, 1);
+#endif
 
 	/* The first few requests do not require asynchronous access */
 	while (!authenticated) {
@@ -406,6 +419,10 @@ monitor_child_postauth(struct ssh *ssh, struct monitor *pmonitor)
 	monitor_permit(mon_dispatch, MONITOR_REQ_MODULI, 1);
 	monitor_permit(mon_dispatch, MONITOR_REQ_SIGN, 1);
 	monitor_permit(mon_dispatch, MONITOR_REQ_TERM, 1);
+#ifdef GSSAPI
+	/* and for the GSSAPI key exchange */
+	monitor_permit(mon_dispatch, MONITOR_REQ_GSSSETUP, 1);
+#endif
 
 	if (auth_opts->permit_pty_flag) {
 		monitor_permit(mon_dispatch, MONITOR_REQ_PTY, 1);
@@ -1712,6 +1729,17 @@ monitor_apply_keystate(struct ssh *ssh, struct monitor *pmonitor)
 # ifdef OPENSSL_HAS_ECC
 		kex->kex[KEX_ECDH_SHA2] = kex_gen_server;
 # endif
+# ifdef GSSAPI
+		if (options.gss_keyex) {
+			kex->kex[KEX_GSS_GRP1_SHA1] = kexgss_server;
+			kex->kex[KEX_GSS_GRP14_SHA1] = kexgss_server;
+			kex->kex[KEX_GSS_GRP14_SHA256] = kexgss_server;
+			kex->kex[KEX_GSS_GRP16_SHA512] = kexgss_server;
+			kex->kex[KEX_GSS_GEX_SHA1] = kexgssgex_server;
+			kex->kex[KEX_GSS_NISTP256_SHA256] = kexgss_server;
+			kex->kex[KEX_GSS_C25519_SHA256] = kexgss_server;
+		}
+# endif
 #endif /* WITH_OPENSSL */
 		kex->kex[KEX_C25519_SHA256] = kex_gen_server;
 		kex->kex[KEX_KEM_SNTRUP4591761X25519_SHA512] = kex_gen_server;
@@ -1805,8 +1833,8 @@ mm_answer_gss_setup_ctx(struct ssh *ssh, int sock, struct sshbuf *m)
 	u_char *p;
 	int r;
 
-	if (!options.gss_authentication)
-		fatal("%s: GSSAPI authentication not enabled", __func__);
+	if (!options.gss_authentication && !options.gss_keyex)
+		fatal("%s: GSSAPI not enabled", __func__);
 
 	if ((r = sshbuf_get_string(m, &p, &len)) != 0)
 		fatal("%s: buffer error: %s", __func__, ssh_err(r));
@@ -1838,8 +1866,8 @@ mm_answer_gss_accept_ctx(struct ssh *ssh, int sock, struct sshbuf *m)
 	OM_uint32 flags = 0; /* GSI needs this */
 	int r;
 
-	if (!options.gss_authentication)
-		fatal("%s: GSSAPI authentication not enabled", __func__);
+	if (!options.gss_authentication && !options.gss_keyex)
+		fatal("%s: GSSAPI not enabled", __func__);
 
 	if ((r = ssh_gssapi_get_buffer_desc(m, &in)) != 0)
 		fatal("%s: buffer error: %s", __func__, ssh_err(r));
@@ -1859,6 +1887,7 @@ mm_answer_gss_accept_ctx(struct ssh *ssh, int sock, struct sshbuf *m)
 		monitor_permit(mon_dispatch, MONITOR_REQ_GSSSTEP, 0);
 		monitor_permit(mon_dispatch, MONITOR_REQ_GSSUSEROK, 1);
 		monitor_permit(mon_dispatch, MONITOR_REQ_GSSCHECKMIC, 1);
+		monitor_permit(mon_dispatch, MONITOR_REQ_GSSSIGN, 1);
 	}
 	return (0);
 }
@@ -1870,8 +1899,8 @@ mm_answer_gss_checkmic(struct ssh *ssh, int sock, struct sshbuf *m)
 	OM_uint32 ret;
 	int r;
 
-	if (!options.gss_authentication)
-		fatal("%s: GSSAPI authentication not enabled", __func__);
+	if (!options.gss_authentication && !options.gss_keyex)
+		fatal("%s: GSSAPI not enabled", __func__);
 
 	if ((r = ssh_gssapi_get_buffer_desc(m, &gssbuf)) != 0 ||
 	    (r = ssh_gssapi_get_buffer_desc(m, &mic)) != 0)
@@ -1897,13 +1926,17 @@ mm_answer_gss_checkmic(struct ssh *ssh, int sock, struct sshbuf *m)
 int
 mm_answer_gss_userok(struct ssh *ssh, int sock, struct sshbuf *m)
 {
-	int r, authenticated;
+	int r, authenticated, kex;
 	const char *displayname;
 
-	if (!options.gss_authentication)
-		fatal("%s: GSSAPI authentication not enabled", __func__);
+	if (!options.gss_authentication && !options.gss_keyex)
+		fatal("%s: GSSAPI not enabled", __func__);
 
-	authenticated = authctxt->valid && ssh_gssapi_userok(authctxt->user);
+	if ((r = sshbuf_get_u32(m, &kex)) != 0)
+		fatal("%s: buffer error: %s", __func__, ssh_err(r));
+
+	authenticated = authctxt->valid &&
+	    ssh_gssapi_userok(authctxt->user, authctxt->pw, kex);
 
 	sshbuf_reset(m);
 	if ((r = sshbuf_put_u32(m, authenticated)) != 0)
@@ -1912,7 +1945,11 @@ mm_answer_gss_userok(struct ssh *ssh, int sock, struct sshbuf *m)
 	debug3("%s: sending result %d", __func__, authenticated);
 	mm_request_send(sock, MONITOR_ANS_GSSUSEROK, m);
 
-	auth_method = "gssapi-with-mic";
+	if (kex) {
+		auth_method = "gssapi-keyex";
+	} else {
+		auth_method = "gssapi-with-mic";
+	}
 
 	if ((displayname = ssh_gssapi_displayname()) != NULL)
 		auth2_record_info(authctxt, "%s", displayname);
@@ -1920,5 +1957,85 @@ mm_answer_gss_userok(struct ssh *ssh, int sock, struct sshbuf *m)
 	/* Monitor loop will terminate if authenticated */
 	return (authenticated);
 }
+
+int
+mm_answer_gss_sign(struct ssh *ssh, int socket, struct sshbuf *m)
+{
+	gss_buffer_desc data;
+	gss_buffer_desc hash = GSS_C_EMPTY_BUFFER;
+	OM_uint32 major, minor;
+	size_t len;
+	u_char *p = NULL;
+	int r;
+
+	if (!options.gss_authentication && !options.gss_keyex)
+		fatal("%s: GSSAPI not enabled", __func__);
+
+	if ((r = sshbuf_get_string(m, &p, &len)) != 0)
+		fatal("%s: buffer error: %s", __func__, ssh_err(r));
+	data.value = p;
+	data.length = len;
+	/* Lengths of SHA-1, SHA-256 and SHA-512 hashes that are used */
+	if (data.length != 20 && data.length != 32 && data.length != 64)
+		fatal("%s: data length incorrect: %d", __func__,
+		    (int) data.length);
+
+	/* Save the session ID on the first time around */
+	if (session_id2_len == 0) {
+		session_id2_len = data.length;
+		session_id2 = xmalloc(session_id2_len);
+		memcpy(session_id2, data.value, session_id2_len);
+	}
+	major = ssh_gssapi_sign(gsscontext, &data, &hash);
+
+	free(data.value);
+
+	sshbuf_reset(m);
+
+	if ((r = sshbuf_put_u32(m, major)) != 0 ||
+	    (r = sshbuf_put_string(m, hash.value, hash.length)) != 0)
+		fatal("%s: buffer error: %s", __func__, ssh_err(r));
+
+	mm_request_send(socket, MONITOR_ANS_GSSSIGN, m);
+
+	gss_release_buffer(&minor, &hash);
+
+	/* Turn on getpwnam permissions */
+	monitor_permit(mon_dispatch, MONITOR_REQ_PWNAM, 1);
+
+	/* And credential updating, for when rekeying */
+	monitor_permit(mon_dispatch, MONITOR_REQ_GSSUPCREDS, 1);
+
+	return (0);
+}
+
+int
+mm_answer_gss_updatecreds(struct ssh *ssh, int socket, struct sshbuf *m) {
+	ssh_gssapi_ccache store;
+	int r, ok;
+
+	if (!options.gss_authentication && !options.gss_keyex)
+		fatal("%s: GSSAPI not enabled", __func__);
+
+	if ((r = sshbuf_get_string(m, (u_char **)&store.filename, NULL)) != 0 ||
+	    (r = sshbuf_get_string(m, (u_char **)&store.envvar, NULL)) != 0 ||
+	    (r = sshbuf_get_string(m, (u_char **)&store.envval, NULL)) != 0)
+		fatal("%s: buffer error: %s", __func__, ssh_err(r));
+
+	ok = ssh_gssapi_update_creds(&store);
+
+	free(store.filename);
+	free(store.envvar);
+	free(store.envval);
+
+	sshbuf_reset(m);
+	if ((r = sshbuf_put_u32(m, ok)) != 0)
+		fatal("%s: buffer error: %s", __func__, ssh_err(r));
+
+	mm_request_send(socket, MONITOR_ANS_GSSUPCREDS, m);
+
+	return(0);
+}
+
 #endif /* GSSAPI */
 
