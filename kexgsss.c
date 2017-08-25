@@ -106,7 +106,11 @@ kexgss_server(struct ssh *ssh)
 		dh = dh_new_group1();
 		break;
 	case KEX_GSS_GRP14_SHA1:
+	case KEX_GSS_GRP14_SHA256:
 		dh = dh_new_group14();
+		break;
+	case KEX_GSS_GRP16_SHA512:
+		dh = dh_new_group16();
 		break;
 	case KEX_GSS_GEX_SHA1:
 		debug("Doing group exchange");
@@ -225,6 +229,8 @@ kexgss_server(struct ssh *ssh)
 	switch (ssh->kex->kex_type) {
 	case KEX_GSS_GRP1_SHA1:
 	case KEX_GSS_GRP14_SHA1:
+	case KEX_GSS_GRP14_SHA256:
+	case KEX_GSS_GRP16_SHA512:
 		kex_dh_hash(ssh->kex->hash_alg,
 		    ssh->kex->client_version, ssh->kex->server_version,
 		    sshbuf_ptr(ssh->kex->peer), sshbuf_len(ssh->kex->peer),

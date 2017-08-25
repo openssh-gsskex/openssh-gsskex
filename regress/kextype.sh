@@ -14,7 +14,9 @@ echo "KexAlgorithms=$KEXOPT" >> $OBJ/sshd_proxy
 
 tries="1 2 3 4"
 for k in `${SSH} -Q kex`; do
-	if [ $k = "gss-gex-sha1-" -o $k = "gss-group1-sha1-" -o $k = "gss-group14-sha1-" ]; then
+	if [ $k = "gss-gex-sha1-" -o $k = "gss-group1-sha1-" -o \
+	    $k = "gss-group14-sha1-" -o $k = "gss-group14-sha256-" -o \
+	    $k = "gss-group16-sha512-" ]; then
 		continue
 	fi
 	verbose "kex $k"
