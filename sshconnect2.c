@@ -223,7 +223,7 @@ ssh_kex2(struct ssh *ssh, char *host, struct sockaddr *hostaddr, u_short port)
 			gss_host = xstrdup(host);
 
 		gss = ssh_gssapi_client_mechanisms(gss_host,
-		    options.gss_client_identity);
+		    options.gss_client_identity, options.gss_kex_algorithms);
 		if (gss) {
 			debug("Offering GSSAPI proposal: %s", gss);
 			xasprintf(&myproposal[PROPOSAL_KEX_ALGS],
