@@ -2465,6 +2465,8 @@ do_ssh2_kex(struct ssh *ssh)
 		kex->kex[KEX_GSS_GRP14_SHA256] = kexgss_server;
 		kex->kex[KEX_GSS_GRP16_SHA512] = kexgss_server;
 		kex->kex[KEX_GSS_GEX_SHA1] = kexgssgex_server;
+		kex->kex[KEX_GSS_NISTP256_SHA256] = kexgss_server;
+		kex->kex[KEX_GSS_C25519_SHA256] = kexgss_server;
 	}
 # endif
 #endif /* WITH_OPENSSL */

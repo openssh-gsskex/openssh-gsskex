@@ -90,6 +90,12 @@ kexgss_client(struct ssh *ssh)
 	case KEX_GSS_GRP16_SHA512:
 		r = kex_dh_keypair(kex);
 		break;
+	case KEX_GSS_NISTP256_SHA256:
+		r = kex_ecdh_keypair(kex);
+		break;
+	case KEX_GSS_C25519_SHA256:
+		r = kex_c25519_keypair(kex);
+		break;
 	default:
 		fatal("%s: Unexpected KEX type %d", __func__, kex->kex_type);
 	}
@@ -240,6 +246,21 @@ kexgss_client(struct ssh *ssh)
 	case KEX_GSS_GRP14_SHA256:
 	case KEX_GSS_GRP16_SHA512:
 		r = kex_dh_dec(kex, server_blob, &shared_secret);
+		break;
+	case KEX_GSS_C25519_SHA256:
+		if (sshbuf_ptr(server_blob)[sshbuf_len(server_blob)] & 0x80)
+			fatal("The received key has MSB of last octet set!");
+		r = kex_c25519_dec(kex, server_blob, &shared_secret);
+		break;
+	case KEX_GSS_NISTP256_SHA256:
+		if (sshbuf_len(server_blob) != 65)
+			fatal("The received NIST-P256 key did not match"
+			    "expected length (expected 65, got %zu)", sshbuf_len(server_blob));
+
+		if (sshbuf_ptr(server_blob)[0] != POINT_CONVERSION_UNCOMPRESSED)
+			fatal("The received NIST-P256 key does not have first octet 0x04");
+
+		r = kex_ecdh_dec(kex, server_blob, &shared_secret);
 		break;
 	default:
 		r = SSH_ERR_INVALID_ARGUMENT;
