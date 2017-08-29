@@ -123,6 +123,14 @@ kexgss_server(struct ssh *ssh)
 				r = kex_dh_enc(kex, client_pubkey, &server_pubkey,
 				    &shared_secret);
 				break;
+			case KEX_GSS_NISTP256_SHA256:
+				r = kex_ecdh_enc(kex, client_pubkey, &server_pubkey,
+				    &shared_secret);
+				break;
+			case KEX_GSS_C25519_SHA256:
+				r = kex_c25519_enc(kex, client_pubkey, &server_pubkey,
+				    &shared_secret);
+				break;
 			default:
 				fatal("%s: Unexpected KEX type %d", __func__, kex->kex_type);
 			}

@@ -263,6 +263,8 @@ ssh_kex2(struct ssh *ssh, char *host, struct sockaddr *hostaddr, u_short port)
 		ssh->kex->kex[KEX_GSS_GRP14_SHA256] = kexgss_client;
 		ssh->kex->kex[KEX_GSS_GRP16_SHA512] = kexgss_client;
 		ssh->kex->kex[KEX_GSS_GEX_SHA1] = kexgssgex_client;
+		ssh->kex->kex[KEX_GSS_NISTP256_SHA256] = kexgss_client;
+		ssh->kex->kex[KEX_GSS_C25519_SHA256] = kexgss_client;
 	}
 # endif
 #endif
