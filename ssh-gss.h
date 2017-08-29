@@ -73,6 +73,8 @@
 #define KEX_GSS_GRP14_SHA256_ID			"gss-group14-sha256-"
 #define KEX_GSS_GRP16_SHA512_ID			"gss-group16-sha512-"
 #define KEX_GSS_GEX_SHA1_ID				"gss-gex-sha1-"
+#define KEX_GSS_NISTP256_SHA256_ID			"gss-nistp256-sha256-"
+#define KEX_GSS_C25519_SHA256_ID			"gss-curve25519-sha256-"
 
 #define        GSS_KEX_DEFAULT_KEX \
 	KEX_GSS_GEX_SHA1_ID "," \

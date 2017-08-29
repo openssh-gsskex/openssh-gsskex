@@ -109,6 +109,8 @@ enum kex_exchange {
 	KEX_GSS_GRP14_SHA256,
 	KEX_GSS_GRP16_SHA512,
 	KEX_GSS_GEX_SHA1,
+	KEX_GSS_NISTP256_SHA256,
+	KEX_GSS_C25519_SHA256,
 #endif
 	KEX_MAX
 };
@@ -218,6 +220,8 @@ int	 kexgex_server(struct ssh *);
 int	 kex_gen_client(struct ssh *);
 int	 kex_gen_server(struct ssh *);
 #ifdef GSSAPI
+int	 kexecgss_client(struct ssh *);
+int	 kexecgss_server(struct ssh *);
 int	 kexgss_client(struct ssh *);
 int	 kexgss_server(struct ssh *);
 #endif

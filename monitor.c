@@ -1714,6 +1714,8 @@ monitor_apply_keystate(struct ssh *ssh, struct monitor *pmonitor)
 			kex->kex[KEX_GSS_GRP14_SHA256] = kexgss_server;
 			kex->kex[KEX_GSS_GRP16_SHA512] = kexgss_server;
 			kex->kex[KEX_GSS_GEX_SHA1] = kexgss_server;
+			kex->kex[KEX_GSS_NISTP256_SHA256] = kexecgss_server;
+			kex->kex[KEX_GSS_C25519_SHA256] = kexecgss_server;
 		}
 #endif
 		kex->load_host_public_key=&get_hostkey_public_by_type;
@@ -1941,7 +1943,8 @@ mm_answer_gss_sign(int socket, struct sshbuf *m)
 		fatal("%s: buffer error: %s", __func__, ssh_err(r));
 	data.value = p;
 	data.length = len;
-	if (data.length != 20)
+	/* Lengths of SHA-1, SHA-256 and SHA-512 hashes that are used */
+	if (data.length != 20 && data.length != 32 && data.length != 64)
 		fatal("%s: data length incorrect: %d", __func__,
 		    (int) data.length);
 

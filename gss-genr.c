@@ -217,6 +217,16 @@ ssh_gssapi_id_kex(Gssctxt *ctx, char *name, int kex_type) {
 			return GSS_C_NO_OID;
 		name += sizeof(KEX_GSS_GEX_SHA1_ID) - 1;
 		break;
+	case KEX_GSS_NISTP256_SHA256:
+		if (strlen(name) < sizeof(KEX_GSS_NISTP256_SHA256_ID))
+			return GSS_C_NO_OID;
+		name += sizeof(KEX_GSS_NISTP256_SHA256_ID) - 1;
+		break;
+	case KEX_GSS_C25519_SHA256:
+		if (strlen(name) < sizeof(KEX_GSS_C25519_SHA256_ID))
+			return GSS_C_NO_OID;
+		name += sizeof(KEX_GSS_C25519_SHA256_ID) - 1;
+		break;
 	default:
 		return GSS_C_NO_OID;
 	}

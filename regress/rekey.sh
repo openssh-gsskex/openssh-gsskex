@@ -39,6 +39,7 @@ increase_datafile_size 300
 opts=""
 for i in `${SSH} -Q kex`; do
 	if [ $i = "gss-gex-sha1-" -o $i = "gss-group1-sha1-" -o \
+	    $i = "gss-nistp256-sha256-" -o $i = "gss-curve25519-sha256-" -o \
 	    $i = "gss-group14-sha1-" -o $i = "gss-group14-sha256-" -o \
 	    $i = "gss-group16-sha512-" ]; then
 		continue
@@ -62,6 +63,7 @@ if ${SSH} -Q cipher-auth | grep '^.*$' >/dev/null 2>&1 ; then
   for c in `${SSH} -Q cipher-auth`; do
     for kex in `${SSH} -Q kex`; do
 	if [ $kex = "gss-gex-sha1-" -o $kex = "gss-group1-sha1-" -o \
+	    $kex = "gss-nistp256-sha256-" -o $kex = "gss-curve25519-sha256-" -o \
 	    $kex = "gss-group14-sha1-" -o $kex = "gss-group14-sha256-" -o \
 	    $kex = "gss-group16-sha512-" ]; then
 		continue
