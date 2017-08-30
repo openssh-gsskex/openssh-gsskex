@@ -190,46 +190,27 @@ ssh_gssapi_kex_mechs(gss_OID_set gss_supported, ssh_gssapi_check_fn *check,
 gss_OID
 ssh_gssapi_id_kex(Gssctxt *ctx, char *name, int kex_type) {
 	int i = 0;
-	
+
+#define SKIP_KEX_NAME(type) \
+	case type: \
+		if (strlen(name) < sizeof(type##_ID)) \
+			return GSS_C_NO_OID; \
+		name += sizeof(type##_ID) - 1; \
+		break;
+
 	switch (kex_type) {
-	case KEX_GSS_GRP1_SHA1:
-		if (strlen(name) < sizeof(KEX_GSS_GRP1_SHA1_ID))
-			return GSS_C_NO_OID;
-		name += sizeof(KEX_GSS_GRP1_SHA1_ID) - 1;
-		break;
-	case KEX_GSS_GRP14_SHA1:
-		if (strlen(name) < sizeof(KEX_GSS_GRP14_SHA1_ID))
-			return GSS_C_NO_OID;
-		name += sizeof(KEX_GSS_GRP14_SHA1_ID) - 1;
-		break;
-	case KEX_GSS_GRP14_SHA256:
-		if (strlen(name) < sizeof(KEX_GSS_GRP14_SHA256_ID))
-			return GSS_C_NO_OID;
-		name += sizeof(KEX_GSS_GRP14_SHA256_ID) - 1;
-		break;
-	case KEX_GSS_GRP16_SHA512:
-		if (strlen(name) < sizeof(KEX_GSS_GRP16_SHA512_ID))
-			return GSS_C_NO_OID;
-		name += sizeof(KEX_GSS_GRP16_SHA512_ID) - 1;
-		break;
-	case KEX_GSS_GEX_SHA1:
-		if (strlen(name) < sizeof(KEX_GSS_GEX_SHA1_ID))
-			return GSS_C_NO_OID;
-		name += sizeof(KEX_GSS_GEX_SHA1_ID) - 1;
-		break;
-	case KEX_GSS_NISTP256_SHA256:
-		if (strlen(name) < sizeof(KEX_GSS_NISTP256_SHA256_ID))
-			return GSS_C_NO_OID;
-		name += sizeof(KEX_GSS_NISTP256_SHA256_ID) - 1;
-		break;
-	case KEX_GSS_C25519_SHA256:
-		if (strlen(name) < sizeof(KEX_GSS_C25519_SHA256_ID))
-			return GSS_C_NO_OID;
-		name += sizeof(KEX_GSS_C25519_SHA256_ID) - 1;
-		break;
+	SKIP_KEX_NAME(KEX_GSS_GRP1_SHA1)
+	SKIP_KEX_NAME(KEX_GSS_GRP14_SHA1)
+	SKIP_KEX_NAME(KEX_GSS_GRP14_SHA256)
+	SKIP_KEX_NAME(KEX_GSS_GRP16_SHA512)
+	SKIP_KEX_NAME(KEX_GSS_GEX_SHA1)
+	SKIP_KEX_NAME(KEX_GSS_NISTP256_SHA256)
+	SKIP_KEX_NAME(KEX_GSS_C25519_SHA256)
 	default:
 		return GSS_C_NO_OID;
 	}
+
+#undef SKIP_KEX_NAME
 
 	while (gss_enc2oid[i].encoded != NULL &&
 	    strcmp(name, gss_enc2oid[i].encoded) != 0)
