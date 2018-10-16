@@ -1901,14 +1901,17 @@ mm_answer_gss_checkmic(struct ssh *ssh, int sock, struct sshbuf *m)
 int
 mm_answer_gss_userok(struct ssh *ssh, int sock, struct sshbuf *m)
 {
-	int r, authenticated;
+	int r, authenticated, kex;
 	const char *displayname;
 
 	if (!options.gss_authentication && !options.gss_keyex)
 		fatal("%s: GSSAPI not enabled", __func__);
 
+	if ((r = sshbuf_get_u32(m, &kex)) != 0)
+		fatal("%s: buffer error: %s", __func__, ssh_err(r));
+
 	authenticated = authctxt->valid &&
-	    ssh_gssapi_userok(authctxt->user, authctxt->pw);
+	    ssh_gssapi_userok(authctxt->user, authctxt->pw, kex);
 
 	sshbuf_reset(m);
 	if ((r = sshbuf_put_u32(m, authenticated)) != 0)
@@ -1917,7 +1920,11 @@ mm_answer_gss_userok(struct ssh *ssh, int sock, struct sshbuf *m)
 	debug3("%s: sending result %d", __func__, authenticated);
 	mm_request_send(sock, MONITOR_ANS_GSSUSEROK, m);
 
-	auth_method = "gssapi-with-mic";
+	if (kex) {
+		auth_method = "gssapi-keyex";
+	} else {
+		auth_method = "gssapi-with-mic";
+	}
 
 	if ((displayname = ssh_gssapi_displayname()) != NULL)
 		auth2_record_info(authctxt, "%s", displayname);

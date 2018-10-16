@@ -88,7 +88,7 @@ userauth_gsskeyex(struct ssh *ssh)
 	if (!GSS_ERROR(PRIVSEP(ssh_gssapi_checkmic(gss_kex_context,
 	    &gssbuf, &mic))))
 		authenticated = PRIVSEP(ssh_gssapi_userok(authctxt->user,
-		    authctxt->pw));
+		    authctxt->pw, 1));
 
 	sshbuf_free(b);
 	free(mic.value);
@@ -303,7 +303,7 @@ input_gssapi_exchange_complete(int type, u_int32_t plen, struct ssh *ssh)
 		fatal("%s: %s", __func__, ssh_err(r));
 
 	authenticated = PRIVSEP(ssh_gssapi_userok(authctxt->user,
-	    authctxt->pw));
+	    authctxt->pw, 1));
 
 	if ((!use_privsep || mm_is_monitor()) &&
 	    (displayname = ssh_gssapi_displayname()) != NULL)
@@ -350,7 +350,7 @@ input_gssapi_mic(int type, u_int32_t plen, struct ssh *ssh)
 
 	if (!GSS_ERROR(PRIVSEP(ssh_gssapi_checkmic(gssctxt, &gssbuf, &mic))))
 		authenticated = PRIVSEP(ssh_gssapi_userok(authctxt->user,
-		    authctxt->pw));
+		    authctxt->pw, 0));
 	else
 		logit("GSSAPI MIC check failed");
 

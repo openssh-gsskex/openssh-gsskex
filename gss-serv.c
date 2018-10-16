@@ -441,9 +441,11 @@ ssh_gssapi_do_child(char ***envp, u_int *envsizep)
 
 /* Privileged */
 int
-ssh_gssapi_userok(char *user, struct passwd *pw)
+ssh_gssapi_userok(char *user, struct passwd *pw, int kex)
 {
 	OM_uint32 lmin;
+
+	(void) kex; /* used in privilege separation */
 
 	if (gssapi_client.exportedname.length == 0 ||
 	    gssapi_client.exportedname.value == NULL) {
