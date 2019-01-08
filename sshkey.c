@@ -154,6 +154,7 @@ static const struct keytype keytypes[] = {
 	    KEY_ECDSA_SK_CERT, NID_X9_62_prime256v1, 1, 0 },
 # endif /* OPENSSL_HAS_ECC */
 #endif /* WITH_OPENSSL */
+	{ "null", "null", NULL, KEY_NULL, 0, 0, 0 },
 	{ NULL, NULL, NULL, -1, -1, 0, 0 }
 };
 
@@ -255,7 +256,7 @@ sshkey_alg_list(int certs_only, int plain_only, int include_sigonly, char sep)
 	const struct keytype *kt;
 
 	for (kt = keytypes; kt->type != -1; kt++) {
-		if (kt->name == NULL)
+		if (kt->name == NULL || kt->type == KEY_NULL)
 			continue;
 		if (!include_sigonly && kt->sigonly)
 			continue;
