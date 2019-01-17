@@ -1,0 +1,26 @@
+language: c
+
+compiler:
+  - clang
+  - gcc
+
+# Run only unit tests. Without OpenSSL, some additional tests in makefile do not work
+env:
+  - CONFIGURE=--with-kerberos5=auto                   TESTS="LTESTS="
+  - CONFIGURE=--without-kerberos5                     TESTS="LTESTS="
+  - CONFIGURE=--with-kerberos5=auto --without-openssl TESTS="REGRESS_TARGETS=unit"
+  - CONFIGURE=--without-kerberos5 --without-openssl   TESTS="REGRESS_TARGETS=unit"
+
+addons:
+  apt_packages:
+    - libssl-dev
+    - libkrb5-dev
+
+before_script:
+  - autoreconf
+  - ./configure $CONFIGURE
+
+script:
+  - make
+  - # make tests
+  - make tests $TESTS
