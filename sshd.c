@@ -2406,7 +2406,7 @@ do_ssh2_kex(struct ssh *ssh)
 	myproposal[PROPOSAL_SERVER_HOST_KEY_ALGS] = compat_pkalg_proposal(
 	    list_hostkey_types());
 
-#ifdef GSSAPI
+#if defined(GSSAPI) && defined(WITH_OPENSSL)
 	{
 	char *orig;
 	char *gss = NULL;
@@ -2463,16 +2463,16 @@ do_ssh2_kex(struct ssh *ssh)
 # ifdef OPENSSL_HAS_ECC
 	kex->kex[KEX_ECDH_SHA2] = kex_gen_server;
 # endif
-#endif /* WITH_OPENSSL */
-	kex->kex[KEX_C25519_SHA256] = kex_gen_server;
-	kex->kex[KEX_KEM_SNTRUP4591761X25519_SHA512] = kex_gen_server;
-#ifdef GSSAPI
+# ifdef GSSAPI
 	if (options.gss_keyex) {
 		kex->kex[KEX_GSS_GRP1_SHA1] = kexgss_server;
 		kex->kex[KEX_GSS_GRP14_SHA1] = kexgss_server;
 		kex->kex[KEX_GSS_GEX_SHA1] = kexgssgex_server;
 	}
-#endif
+# endif
+#endif /* WITH_OPENSSL */
+	kex->kex[KEX_C25519_SHA256] = kex_gen_server;
+	kex->kex[KEX_KEM_SNTRUP4591761X25519_SHA512] = kex_gen_server;
 	kex->load_host_public_key=&get_hostkey_public_by_type;
 	kex->load_host_private_key=&get_hostkey_private_by_type;
 	kex->host_key_index=&get_hostkey_index;
