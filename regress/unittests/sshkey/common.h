@@ -11,6 +11,7 @@ struct sshbuf *load_file(const char *name);
 /* Load a text file into a buffer */
 struct sshbuf *load_text_file(const char *name);
 
+#ifdef WITH_OPENSSL
 /* Load a bignum from a file */
 BIGNUM *load_bignum(const char *name);
 
@@ -22,4 +23,4 @@ const BIGNUM *rsa_q(struct sshkey *k);
 const BIGNUM *dsa_g(struct sshkey *k);
 const BIGNUM *dsa_pub_key(struct sshkey *k);
 const BIGNUM *dsa_priv_key(struct sshkey *k);
-
+#endif /* WITH_OPENSSL */

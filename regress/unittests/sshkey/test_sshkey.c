@@ -16,12 +16,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <openssl/bn.h>
-#include <openssl/rsa.h>
-#include <openssl/dsa.h>
-#if defined(OPENSSL_HAS_ECC) && defined(OPENSSL_HAS_NISTP256)
-# include <openssl/ec.h>
-#endif
+#ifdef WITH_OPENSSL
+# include <openssl/bn.h>
+# include <openssl/rsa.h>
+# include <openssl/dsa.h>
+# if defined(OPENSSL_HAS_ECC) && defined(OPENSSL_HAS_NISTP256)
+#  include <openssl/ec.h>
+# endif
+#endif /* WITH_OPENSSL */
 
 #include "../test_helper/test_helper.h"
 
@@ -193,6 +195,7 @@ sshkey_tests(void)
 	sshkey_free(k1);
 	TEST_DONE();
 
+#ifdef WITH_OPENSSL
 	TEST_START("new/free KEY_RSA");
 	k1 = sshkey_new(KEY_RSA);
 	ASSERT_PTR_NE(k1, NULL);
@@ -207,14 +210,15 @@ sshkey_tests(void)
 	sshkey_free(k1);
 	TEST_DONE();
 
-#ifdef OPENSSL_HAS_ECC
+# ifdef OPENSSL_HAS_ECC
 	TEST_START("new/free KEY_ECDSA");
 	k1 = sshkey_new(KEY_ECDSA);
 	ASSERT_PTR_NE(k1, NULL);
 	ASSERT_PTR_EQ(k1->ecdsa, NULL);  /* Can't allocate without NID */
 	sshkey_free(k1);
 	TEST_DONE();
-#endif
+# endif /* OPENSSL_HAS_ECC */
+#endif /* WITH_OPENSSL */
 
 	TEST_START("new/free KEY_ED25519");
 	k1 = sshkey_new(KEY_ED25519);
@@ -225,6 +229,7 @@ sshkey_tests(void)
 	sshkey_free(k1);
 	TEST_DONE();
 
+#ifdef WITH_OPENSSL
 	TEST_START("generate KEY_RSA too small modulus");
 	ASSERT_INT_EQ(sshkey_generate(KEY_RSA, 128, &k1),
 	    SSH_ERR_KEY_LENGTH);
@@ -244,14 +249,14 @@ sshkey_tests(void)
 	sshkey_free(k1);
 	TEST_DONE();
 
-#ifdef OPENSSL_HAS_ECC
+# ifdef OPENSSL_HAS_ECC
 	TEST_START("generate KEY_ECDSA wrong bits");
 	ASSERT_INT_EQ(sshkey_generate(KEY_ECDSA, 42, &k1),
 	    SSH_ERR_KEY_LENGTH);
 	ASSERT_PTR_EQ(k1, NULL);
 	sshkey_free(k1);
 	TEST_DONE();
-#endif
+# endif /* OPENSSL_HAS_ECC */
 
 	TEST_START("generate KEY_RSA");
 	ASSERT_INT_EQ(sshkey_generate(KEY_RSA, 767, &kr),
@@ -273,7 +278,7 @@ sshkey_tests(void)
 	ASSERT_PTR_NE(dsa_priv_key(kd), NULL);
 	TEST_DONE();
 
-#ifdef OPENSSL_HAS_ECC
+# ifdef OPENSSL_HAS_ECC
 	TEST_START("generate KEY_ECDSA");
 	ASSERT_INT_EQ(sshkey_generate(KEY_ECDSA, 256, &ke), 0);
 	ASSERT_PTR_NE(ke, NULL);
@@ -281,7 +286,8 @@ sshkey_tests(void)
 	ASSERT_PTR_NE(EC_KEY_get0_public_key(ke->ecdsa), NULL);
 	ASSERT_PTR_NE(EC_KEY_get0_private_key(ke->ecdsa), NULL);
 	TEST_DONE();
-#endif
+# endif /* OPENSSL_HAS_ECC */
+#endif /* WITH_OPENSSL */
 
 	TEST_START("generate KEY_ED25519");
 	ASSERT_INT_EQ(sshkey_generate(KEY_ED25519, 256, &kf), 0);
@@ -291,6 +297,7 @@ sshkey_tests(void)
 	ASSERT_PTR_NE(kf->ed25519_sk, NULL);
 	TEST_DONE();
 
+#ifdef WITH_OPENSSL
 	TEST_START("demote KEY_RSA");
 	ASSERT_INT_EQ(sshkey_from_private(kr, &k1), 0);
 	ASSERT_PTR_NE(k1, NULL);
@@ -322,7 +329,7 @@ sshkey_tests(void)
 	sshkey_free(k1);
 	TEST_DONE();
 
-#ifdef OPENSSL_HAS_ECC
+# ifdef OPENSSL_HAS_ECC
 	TEST_START("demote KEY_ECDSA");
 	ASSERT_INT_EQ(sshkey_from_private(ke, &k1), 0);
 	ASSERT_PTR_NE(k1, NULL);
@@ -338,7 +345,8 @@ sshkey_tests(void)
 	ASSERT_INT_EQ(sshkey_equal(ke, k1), 1);
 	sshkey_free(k1);
 	TEST_DONE();
-#endif
+# endif /* OPENSSL_HAS_ECC */
+#endif /* WITH_OPENSSL */
 
 	TEST_START("demote KEY_ED25519");
 	ASSERT_INT_EQ(sshkey_from_private(kf, &k1), 0);
@@ -365,17 +373,19 @@ sshkey_tests(void)
 	TEST_DONE();
 
 	TEST_START("equal different keys");
+#ifdef WITH_OPENSSL
 	ASSERT_INT_EQ(sshkey_generate(KEY_RSA, 1024, &k1), 0);
 	ASSERT_INT_EQ(sshkey_equal(kr, k1), 0);
 	sshkey_free(k1);
 	ASSERT_INT_EQ(sshkey_generate(KEY_DSA, 1024, &k1), 0);
 	ASSERT_INT_EQ(sshkey_equal(kd, k1), 0);
 	sshkey_free(k1);
-#ifdef OPENSSL_HAS_ECC
+# ifdef OPENSSL_HAS_ECC
 	ASSERT_INT_EQ(sshkey_generate(KEY_ECDSA, 256, &k1), 0);
 	ASSERT_INT_EQ(sshkey_equal(ke, k1), 0);
 	sshkey_free(k1);
-#endif
+# endif /* OPENSSL_HAS_ECC */
+#endif /* WITH_OPENSSL */
 	ASSERT_INT_EQ(sshkey_generate(KEY_ED25519, 256, &k1), 0);
 	ASSERT_INT_EQ(sshkey_equal(kf, k1), 0);
 	sshkey_free(k1);
@@ -434,6 +444,7 @@ sshkey_tests(void)
 	sshbuf_reset(b);
 	TEST_DONE();
 
+#ifdef WITH_OPENSSL
 	TEST_START("sign and verify RSA");
 	k1 = get_private("rsa_1");
 	ASSERT_INT_EQ(sshkey_load_public(test_data_file("rsa_2.pub"), &k2,
@@ -470,7 +481,7 @@ sshkey_tests(void)
 	sshkey_free(k2);
 	TEST_DONE();
 
-#ifdef OPENSSL_HAS_ECC
+# ifdef OPENSSL_HAS_ECC
 	TEST_START("sign and verify ECDSA");
 	k1 = get_private("ecdsa_1");
 	ASSERT_INT_EQ(sshkey_load_public(test_data_file("ecdsa_2.pub"), &k2,
@@ -479,7 +490,8 @@ sshkey_tests(void)
 	sshkey_free(k1);
 	sshkey_free(k2);
 	TEST_DONE();
-#endif
+# endif /* OPENSSL_HAS_ECC */
+#endif /* WITH_OPENSSL */
 
 	TEST_START("sign and verify ED25519");
 	k1 = get_private("ed25519_1");
@@ -490,6 +502,7 @@ sshkey_tests(void)
 	sshkey_free(k2);
 	TEST_DONE();
 
+#ifdef WITH_OPENSSL
 	TEST_START("nested certificate");
 	ASSERT_INT_EQ(sshkey_load_cert(test_data_file("rsa_1"), &k1), 0);
 	ASSERT_INT_EQ(sshkey_load_public(test_data_file("rsa_1.pub"), &k2,
@@ -504,5 +517,6 @@ sshkey_tests(void)
 	sshkey_free(k3);
 	sshbuf_free(b);
 	TEST_DONE();
+#endif /* WITH_OPENSSL */
 
 }

@@ -126,7 +126,9 @@ main(int argc, char **argv)
 	int ch;
 
 	seed_rng();
+#ifdef WITH_OPENSSL
 	ERR_load_CRYPTO_strings();
+#endif /* WITH_OPENSSL */
 
 	/* Handle systems without __progname */
 	if (__progname == NULL) {
@@ -287,6 +289,7 @@ test_subtest_info(const char *fmt, ...)
 void
 ssl_err_check(const char *file, int line)
 {
+#ifdef WITH_OPENSSL
 	long openssl_error = ERR_get_error();
 
 	if (openssl_error == 0)
@@ -294,6 +297,7 @@ ssl_err_check(const char *file, int line)
 
 	fprintf(stderr, "\n%s:%d: uncaught OpenSSL error: %s",
 	    file, line, ERR_error_string(openssl_error, NULL));
+#endif /* WITH_OPENSSL */
 	abort();
 }
 
@@ -338,6 +342,7 @@ test_header(const char *file, int line, const char *a1, const char *a2,
 	    a2 != NULL ? ", " : "", a2 != NULL ? a2 : "");
 }
 
+#ifdef WITH_OPENSSL
 void
 assert_bignum(const char *file, int line, const char *a1, const char *a2,
     const BIGNUM *aa1, const BIGNUM *aa2, enum test_predicate pred)
@@ -350,6 +355,7 @@ assert_bignum(const char *file, int line, const char *a1, const char *a2,
 	fprintf(stderr, "%12s = 0x%s\n", a2, BN_bn2hex(aa2));
 	test_die();
 }
+#endif /* WITH_OPENSSL */
 
 void
 assert_string(const char *file, int line, const char *a1, const char *a2,

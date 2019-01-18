@@ -19,13 +19,15 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <openssl/bn.h>
-#include <openssl/rsa.h>
-#include <openssl/dsa.h>
-#include <openssl/objects.h>
-#ifdef OPENSSL_HAS_NISTP256
-# include <openssl/ec.h>
-#endif
+#ifdef WITH_OPENSSL
+# include <openssl/bn.h>
+# include <openssl/rsa.h>
+# include <openssl/dsa.h>
+# include <openssl/objects.h>
+# ifdef OPENSSL_HAS_NISTP256
+#  include <openssl/ec.h>
+# endif
+#endif /* WITH_OPENSSL */
 
 #include "../test_helper/test_helper.h"
 
@@ -51,7 +53,7 @@ sshkey_file_tests(void)
 	pw = load_text_file("pw");
 	TEST_DONE();
 
-
+#ifdef WITH_OPENSSL
 	TEST_START("parse RSA from private");
 	buf = load_file("rsa_1");
 	ASSERT_INT_EQ(sshkey_parse_private_fileblob(buf, "", &k1, NULL), 0);
@@ -252,7 +254,7 @@ sshkey_file_tests(void)
 
 	sshkey_free(k1);
 
-#ifdef OPENSSL_HAS_ECC
+# ifdef OPENSSL_HAS_ECC
 	TEST_START("parse ECDSA from private");
 	buf = load_file("ecdsa_1");
 	ASSERT_INT_EQ(sshkey_parse_private_fileblob(buf, "", &k1, NULL), 0);
@@ -349,7 +351,8 @@ sshkey_file_tests(void)
 	TEST_DONE();
 
 	sshkey_free(k1);
-#endif /* OPENSSL_HAS_ECC */
+# endif /* OPENSSL_HAS_ECC */
+#endif /* WITH_OPENSSL */
 
 	TEST_START("parse Ed25519 from private");
 	buf = load_file("ed25519_1");
@@ -360,6 +363,7 @@ sshkey_file_tests(void)
 	/* XXX check key contents */
 	TEST_DONE();
 
+#ifdef WITH_OPENSSL /* The OpenSSL is needed for decryption ? */
 	TEST_START("parse Ed25519 from private w/ passphrase");
 	buf = load_file("ed25519_1_pw");
 	ASSERT_INT_EQ(sshkey_parse_private_fileblob(buf,
@@ -369,6 +373,7 @@ sshkey_file_tests(void)
 	ASSERT_INT_EQ(sshkey_equal(k1, k2), 1);
 	sshkey_free(k2);
 	TEST_DONE();
+#endif /* WITH_OPENSSL */
 
 	TEST_START("load Ed25519 from public");
 	ASSERT_INT_EQ(sshkey_load_public(test_data_file("ed25519_1.pub"), &k2,

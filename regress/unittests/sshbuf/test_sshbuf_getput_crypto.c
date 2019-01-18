@@ -16,11 +16,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <openssl/bn.h>
-#include <openssl/objects.h>
-#ifdef OPENSSL_HAS_NISTP256
-# include <openssl/ec.h>
-#endif
+#ifdef WITH_OPENSSL
+# include <openssl/bn.h>
+# include <openssl/objects.h>
+# ifdef OPENSSL_HAS_NISTP256
+#  include <openssl/ec.h>
+# endif
+#endif /* WITH_OPENSSL */
 
 #include "../test_helper/test_helper.h"
 #include "ssherr.h"
@@ -31,6 +33,7 @@ void sshbuf_getput_crypto_tests(void);
 void
 sshbuf_getput_crypto_tests(void)
 {
+#ifdef WITH_OPENSSL
 	struct sshbuf *p1;
 	BIGNUM *bn, *bn2;
 	const char *hexbn1 = "0102030405060708090a0b0c0d0e0f10";
@@ -45,7 +48,7 @@ sshbuf_getput_crypto_tests(void)
 		0x70, 0x60, 0x50, 0x40, 0x30, 0x20, 0x10, 0x00,
 		0x7f, 0xff, 0x11
 	};
-#if defined(OPENSSL_HAS_ECC) && defined(OPENSSL_HAS_NISTP256)
+# if defined(OPENSSL_HAS_ECC) && defined(OPENSSL_HAS_NISTP256)
 	const u_char *d;
 	size_t s;
 	BIGNUM *bn_x, *bn_y;
@@ -67,7 +70,7 @@ sshbuf_getput_crypto_tests(void)
 	};
 	EC_KEY *eck;
 	EC_POINT *ecp;
-#endif
+# endif
 	int r;
 
 #define MKBN(b, bnn) \
@@ -221,7 +224,7 @@ sshbuf_getput_crypto_tests(void)
 	sshbuf_free(p1);
 	TEST_DONE();
 
-#if defined(OPENSSL_HAS_ECC) && defined(OPENSSL_HAS_NISTP256)
+# if defined(OPENSSL_HAS_ECC) && defined(OPENSSL_HAS_NISTP256)
 	TEST_START("sshbuf_put_ec");
 	eck = EC_KEY_new_by_curve_name(ec256_nid);
 	ASSERT_PTR_NE(eck, NULL);
@@ -273,6 +276,7 @@ sshbuf_getput_crypto_tests(void)
 	BN_free(bn);
 	BN_free(bn2);
 	TEST_DONE();
-#endif
+# endif
+#endif /* WITH_OPENSSL */
 }
 
