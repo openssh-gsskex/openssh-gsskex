@@ -24,7 +24,7 @@
 
 #include "includes.h"
 
-#ifdef GSSAPI
+#if defined(GSSAPI) && defined(WITH_OPENSSL)
 
 #include "includes.h"
 
@@ -573,4 +573,4 @@ out:
 	sshbuf_free(server_host_key_blob);
 	return r;
 }
-#endif /* GSSAPI */
+#endif /* defined(GSSAPI) && defined(WITH_OPENSSL) */
