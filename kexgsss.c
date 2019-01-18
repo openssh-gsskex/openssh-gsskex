@@ -24,7 +24,7 @@
 
 #include "includes.h"
 
-#ifdef GSSAPI
+#if defined(GSSAPI) && defined(WITH_OPENSSL)
 
 #include <string.h>
 
@@ -638,4 +638,4 @@ out:
 	}
 	return r;
 }
-#endif /* GSSAPI */
+#endif /* defined(GSSAPI) && defined(WITH_OPENSSL) */

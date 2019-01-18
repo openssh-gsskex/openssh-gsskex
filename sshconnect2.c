@@ -159,7 +159,7 @@ ssh_kex2(struct ssh *ssh, char *host, struct sockaddr *hostaddr, u_short port)
 	char *s, *all_key;
 	int r;
 
-#ifdef GSSAPI
+#if defined(GSSAPI) && defined(WITH_OPENSSL)
 	char *orig = NULL, *gss = NULL;
 	char *gss_host = NULL;
 #endif
@@ -196,7 +196,7 @@ ssh_kex2(struct ssh *ssh, char *host, struct sockaddr *hostaddr, u_short port)
 		    order_hostkeyalgs(host, hostaddr, port));
 	}
 
-#ifdef GSSAPI
+#if defined(GSSAPI) && defined(WITH_OPENSSL)
 	if (options.gss_keyex) {
 		/* Add the GSSAPI mechanisms currently supported on this
 		 * client to the key exchange algorithm proposal */
@@ -245,10 +245,7 @@ ssh_kex2(struct ssh *ssh, char *host, struct sockaddr *hostaddr, u_short port)
 # ifdef OPENSSL_HAS_ECC
 	ssh->kex->kex[KEX_ECDH_SHA2] = kex_gen_client;
 # endif
-#endif
-	ssh->kex->kex[KEX_C25519_SHA256] = kex_gen_client;
-	ssh->kex->kex[KEX_KEM_SNTRUP4591761X25519_SHA512] = kex_gen_client;
-#ifdef GSSAPI
+# ifdef GSSAPI
 	if (options.gss_keyex) {
 		ssh->kex->kex[KEX_GSS_GRP1_SHA1] = kexgss_client;
 		ssh->kex->kex[KEX_GSS_GRP14_SHA1] = kexgss_client;
@@ -258,10 +255,13 @@ ssh_kex2(struct ssh *ssh, char *host, struct sockaddr *hostaddr, u_short port)
 		ssh->kex->kex[KEX_GSS_NISTP256_SHA256] = kexecgss_client;
 		ssh->kex->kex[KEX_GSS_C25519_SHA256] = kexecgss_client;
 	}
-#endif
+# endif
+#endif /* WITH_OPENSSL */
+	ssh->kex->kex[KEX_C25519_SHA256] = kex_gen_client;
+	ssh->kex->kex[KEX_KEM_SNTRUP4591761X25519_SHA512] = kex_gen_client;
 	ssh->kex->verify_host_key=&verify_host_key_callback;
 
-#ifdef GSSAPI
+#if defined(GSSAPI) && defined(WITH_OPENSSL)
 	if (options.gss_keyex) {
 		ssh->kex->gss_deleg_creds = options.gss_deleg_creds;
 		ssh->kex->gss_trust_dns = options.gss_trust_dns;
@@ -275,7 +275,7 @@ ssh_kex2(struct ssh *ssh, char *host, struct sockaddr *hostaddr, u_short port)
 	/* remove ext-info from the KEX proposals for rekeying */
 	myproposal[PROPOSAL_KEX_ALGS] =
 	    compat_kex_proposal(options.kex_algorithms);
-#ifdef GSSAPI
+#if defined(GSSAPI) && defined(WITH_OPENSSL)
 	/* repair myproposal after it was crumpled by the */
 	/* ext-info removal above */
 	if (gss) {
