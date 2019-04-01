@@ -205,7 +205,7 @@ ssh_kex2(struct ssh *ssh, char *host, struct sockaddr *hostaddr, u_short port)
 		if (options.gss_server_identity)
 			gss_host = xstrdup(options.gss_server_identity);
 		else if (options.gss_trust_dns)
-			gss_host = remote_hostname(active_state);
+			gss_host = remote_hostname(ssh);
 		else
 			gss_host = xstrdup(host);
 
@@ -251,9 +251,9 @@ ssh_kex2(struct ssh *ssh, char *host, struct sockaddr *hostaddr, u_short port)
 		ssh->kex->kex[KEX_GSS_GRP14_SHA1] = kexgss_client;
 		ssh->kex->kex[KEX_GSS_GRP14_SHA256] = kexgss_client;
 		ssh->kex->kex[KEX_GSS_GRP16_SHA512] = kexgss_client;
-		ssh->kex->kex[KEX_GSS_GEX_SHA1] = kexgss_client;
-		ssh->kex->kex[KEX_GSS_NISTP256_SHA256] = kexecgss_client;
-		ssh->kex->kex[KEX_GSS_C25519_SHA256] = kexecgss_client;
+		ssh->kex->kex[KEX_GSS_GEX_SHA1] = kexgssgex_client;
+		ssh->kex->kex[KEX_GSS_NISTP256_SHA256] = kexgss_client;
+		ssh->kex->kex[KEX_GSS_C25519_SHA256] = kexgss_client;
 	}
 # endif
 #endif /* WITH_OPENSSL */
@@ -381,8 +381,7 @@ static int input_gssapi_response(int type, u_int32_t, struct ssh *);
 static int input_gssapi_token(int type, u_int32_t, struct ssh *);
 static int input_gssapi_error(int, u_int32_t, struct ssh *);
 static int input_gssapi_errtok(int, u_int32_t, struct ssh *);
-static int input_gssapi_hash(int type, u_int32_t, struct ssh *);
-static int userauth_gsskeyex(Authctxt *authctxt);
+static int userauth_gsskeyex(struct ssh *);
 #endif
 
 void	userauth(struct ssh *, char *);
@@ -774,7 +773,7 @@ userauth_gssapi(struct ssh *ssh)
 	if (options.gss_server_identity)
 		gss_host = xstrdup(options.gss_server_identity);
 	else if (options.gss_trust_dns)
-		gss_host = remote_hostname(active_state);
+		gss_host = remote_hostname(ssh);
 	else
 		gss_host = xstrdup(authctxt->host);
 
@@ -1044,10 +1043,10 @@ input_gssapi_error(int type, u_int32_t plen, struct ssh *ssh)
 }
 
 int
-userauth_gsskeyex(Authctxt *authctxt)
+userauth_gsskeyex(struct ssh *ssh)
 {
-	struct ssh *ssh = active_state; /* XXX */
 	struct sshbuf *b = NULL;
+	Authctxt *authctxt = ssh->authctxt;
 	gss_buffer_desc gssbuf;
 	gss_buffer_desc mic = GSS_C_EMPTY_BUFFER;
 	OM_uint32 ms;

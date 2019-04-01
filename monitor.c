@@ -147,8 +147,8 @@ int mm_answer_gss_setup_ctx(struct ssh *, int, struct sshbuf *);
 int mm_answer_gss_accept_ctx(struct ssh *, int, struct sshbuf *);
 int mm_answer_gss_userok(struct ssh *, int, struct sshbuf *);
 int mm_answer_gss_checkmic(struct ssh *, int, struct sshbuf *);
-int mm_answer_gss_sign(int, struct sshbuf *);
-int mm_answer_gss_updatecreds(int, struct sshbuf *);
+int mm_answer_gss_sign(struct ssh*, int, struct sshbuf *);
+int mm_answer_gss_updatecreds(struct ssh*, int, struct sshbuf *);
 #endif
 
 #ifdef SSH_AUDIT_EVENTS
@@ -1710,9 +1710,9 @@ monitor_apply_keystate(struct ssh *ssh, struct monitor *pmonitor)
 			kex->kex[KEX_GSS_GRP14_SHA1] = kexgss_server;
 			kex->kex[KEX_GSS_GRP14_SHA256] = kexgss_server;
 			kex->kex[KEX_GSS_GRP16_SHA512] = kexgss_server;
-			kex->kex[KEX_GSS_GEX_SHA1] = kexgss_server;
-			kex->kex[KEX_GSS_NISTP256_SHA256] = kexecgss_server;
-			kex->kex[KEX_GSS_C25519_SHA256] = kexecgss_server;
+			kex->kex[KEX_GSS_GEX_SHA1] = kexgssgex_server;
+			kex->kex[KEX_GSS_NISTP256_SHA256] = kexgss_server;
+			kex->kex[KEX_GSS_C25519_SHA256] = kexgss_server;
 		}
 # endif
 #endif /* WITH_OPENSSL */
@@ -1934,7 +1934,7 @@ mm_answer_gss_userok(struct ssh *ssh, int sock, struct sshbuf *m)
 }
 
 int
-mm_answer_gss_sign(int socket, struct sshbuf *m)
+mm_answer_gss_sign(struct ssh *ssh, int socket, struct sshbuf *m)
 {
 	gss_buffer_desc data;
 	gss_buffer_desc hash = GSS_C_EMPTY_BUFFER;
@@ -1985,7 +1985,7 @@ mm_answer_gss_sign(int socket, struct sshbuf *m)
 }
 
 int
-mm_answer_gss_updatecreds(int socket, struct sshbuf *m) {
+mm_answer_gss_updatecreds(struct ssh *ssh, int socket, struct sshbuf *m) {
 	ssh_gssapi_ccache store;
 	int r, ok;
 
