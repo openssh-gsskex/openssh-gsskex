@@ -94,14 +94,14 @@ ssh_gssapi_get_buffer_desc(struct sshbuf *b, gss_buffer_desc *g)
 char *
 ssh_gssapi_client_mechanisms(const char *host, const char *client,
     const char *kex) {
-	gss_OID_set gss_supported;
+	gss_OID_set gss_supported = NULL;
 	OM_uint32 min_status;
 
 	if (GSS_ERROR(gss_indicate_mechs(&min_status, &gss_supported)))
 		return NULL;
 
-	return(ssh_gssapi_kex_mechs(gss_supported, ssh_gssapi_check_mechanism,
-	    host, client, kex));
+	return ssh_gssapi_kex_mechs(gss_supported, ssh_gssapi_check_mechanism,
+	    host, client, kex);
 }
 
 char *
@@ -145,6 +145,8 @@ ssh_gssapi_kex_mechs(gss_OID_set gss_supported, ssh_gssapi_check_fn *check,
 			    (r = ssh_digest_final(md, digest, sizeof(digest))) != 0)
 				fatal("%s: digest failed: %s", __func__,
 				    ssh_err(r));
+			ssh_digest_free(md);
+			md = NULL;
 
 			encoded = xmalloc(ssh_digest_bytes(SSH_DIGEST_MD5)
 			    * 2);

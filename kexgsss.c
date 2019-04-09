@@ -71,6 +71,7 @@ kexgss_server(struct ssh *ssh)
 	struct sshbuf *shared_secret = NULL;
 	struct sshbuf *client_pubkey = NULL;
 	struct sshbuf *server_pubkey = NULL;
+	struct sshbuf *empty = sshbuf_new();
 	int type = 0;
 	gss_OID oid;
 	char *mechs;
@@ -154,7 +155,7 @@ kexgss_server(struct ssh *ssh)
 		maj_status = PRIVSEP(ssh_gssapi_accept_ctx(ctxt, &recv_tok,
 		    &send_tok, &ret_flags));
 
-		free(recv_tok.value);
+		gss_release_buffer(&min_status, &recv_tok);
 
 		if (maj_status != GSS_S_COMPLETE && send_tok.length == 0)
 			fatal("Zero length token output when incomplete");
@@ -195,7 +196,7 @@ kexgss_server(struct ssh *ssh)
 	    kex->server_version,
 	    kex->peer,
 	    kex->my,
-	    NULL,
+	    empty,
 	    client_pubkey,
 	    server_pubkey,
 	    shared_secret,
@@ -240,6 +241,7 @@ kexgss_server(struct ssh *ssh)
 	if (options.gss_store_rekey)
 		ssh_gssapi_rekey_creds();
 out:
+	sshbuf_free(empty);
 	explicit_bzero(hash, sizeof(hash));
 	sshbuf_free(shared_secret);
 	sshbuf_free(client_pubkey);
@@ -272,10 +274,10 @@ kexgssgex_server(struct ssh *ssh)
 	u_char hash[SSH_DIGEST_MAX_LENGTH];
 	size_t hashlen;
 	BIGNUM *dh_client_pub = NULL;
-	struct sshbuf *client_pubkey = NULL;
 	const BIGNUM *pub_key, *dh_p, *dh_g;
 	int min = -1, max = -1, nbits = -1;
 	int cmin = -1, cmax = -1; /* client proposal */
+	struct sshbuf *empty = sshbuf_new();
 	u_char *value = NULL;
 	int r;
 
@@ -334,12 +336,16 @@ kexgssgex_server(struct ssh *ssh)
 	if ((r = ssh_packet_write_wait(ssh)) != 0)
 		fatal("ssh_packet_write_wait: %s", ssh_err(r));
 
+	/* Compute our exchange value in parallel with the client */
+	if ((r = dh_gen_key(kex->dh, kex->we_need * 8)) != 0)
+		goto out;
+
 	do {
 		debug("Wait SSH2_MSG_GSSAPI_INIT");
 		type = ssh_packet_read(ssh);
 		switch(type) {
 		case SSH2_MSG_KEXGSS_INIT:
-			if (client_pubkey != NULL)
+			if (dh_client_pub != NULL)
 				fatal("Received KEXGSS_INIT after initialising");
 			if ((r = sshpkt_get_string(ssh, &value, &slen)) != 0 ||
 			    (r = sshpkt_get_bignum2(ssh, &dh_client_pub)) != 0 ||
@@ -366,12 +372,12 @@ kexgssgex_server(struct ssh *ssh)
 		maj_status = PRIVSEP(ssh_gssapi_accept_ctx(ctxt, &recv_tok,
 		    &send_tok, &ret_flags));
 
-		free(recv_tok.value);
+		gss_release_buffer(&min_status, &recv_tok);
 
 		if (maj_status != GSS_S_COMPLETE && send_tok.length == 0)
 			fatal("Zero length token output when incomplete");
 
-		if (client_pubkey == NULL)
+		if (dh_client_pub == NULL)
 			fatal("No client public key");
 
 		if (maj_status & GSS_S_CONTINUE_NEEDED) {
@@ -400,10 +406,6 @@ kexgssgex_server(struct ssh *ssh)
 	if (!(ret_flags & GSS_C_INTEG_FLAG))
 		fatal("Integrity flag wasn't set");
 
-	/* 3. S verifies that the (client) key is valid */
-	if (!dh_pub_is_valid(kex->dh, dh_client_pub))
-		sshpkt_disconnect(ssh, "bad client public DH value");
-
 	/* calculate shared secret */
 	if ((shared_secret = sshbuf_new()) == NULL) {
 		r = SSH_ERR_ALLOC_FAIL;
@@ -421,7 +423,7 @@ kexgssgex_server(struct ssh *ssh)
 	    kex->server_version,
 	    kex->peer,
 	    kex->my,
-	    NULL,
+	    empty,
 	    cmin, nbits, cmax,
 	    dh_p, dh_g,
 	    dh_client_pub,
@@ -469,6 +471,7 @@ kexgssgex_server(struct ssh *ssh)
 	if (options.gss_store_rekey)
 		ssh_gssapi_rekey_creds();
 out:
+	sshbuf_free(empty);
 	explicit_bzero(hash, sizeof(hash));
 	DH_free(kex->dh);
 	kex->dh = NULL;
