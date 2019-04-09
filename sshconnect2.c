@@ -221,7 +221,6 @@ ssh_kex2(struct ssh *ssh, char *host, struct sockaddr *hostaddr, u_short port)
 			orig = myproposal[PROPOSAL_SERVER_HOST_KEY_ALGS];
 			xasprintf(&myproposal[PROPOSAL_SERVER_HOST_KEY_ALGS],
 			    "%s,null", orig);
-			free(gss_host);
 			free(gss);
 		}
 	}
@@ -793,7 +792,7 @@ userauth_gssapi(struct ssh *ssh)
 		    elements[authctxt->mech_tried];
 		/* My DER encoding requires length<128 */
 		if (mech->length < 128 && ssh_gssapi_check_mechanism(&gssctxt,
-		    mech, authctxt->host, options.gss_client_identity)) {
+		    mech, gss_host, options.gss_client_identity)) {
 			ok = 1; /* Mechanism works */
 		} else {
 			authctxt->mech_tried++;
