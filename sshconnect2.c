@@ -400,7 +400,7 @@ Authmethod authmethods[] = {
 	{"gssapi-keyex",
 		userauth_gsskeyex,
 		NULL,
-		&options.gss_authentication,
+		&options.gss_keyex,
 		NULL},
 	{"gssapi-with-mic",
 		userauth_gssapi,
