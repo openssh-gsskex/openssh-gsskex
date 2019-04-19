@@ -38,10 +38,6 @@ increase_datafile_size 300
 
 opts=""
 for i in `${SSH} -Q kex`; do
-	# ignore GSSAPI key exchange mechanisms (all of them start with gss-)
-	case $i in
-		gss-* ) continue ;;
-	esac
 	opts="$opts KexAlgorithms=$i"
 done
 for i in `${SSH} -Q cipher`; do
@@ -60,10 +56,6 @@ done
 if ${SSH} -Q cipher-auth | grep '^.*$' >/dev/null 2>&1 ; then
   for c in `${SSH} -Q cipher-auth`; do
     for kex in `${SSH} -Q kex`; do
-	# ignore GSSAPI key exchange mechanisms (all of them start with gss-)
-	case $kex in
-		gss-* ) continue ;;
-	esac
 	verbose "client rekey $c $kex"
 	ssh_data_rekeying "KexAlgorithms=$kex" -oRekeyLimit=256k -oCiphers=$c
     done
