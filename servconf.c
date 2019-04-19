@@ -585,6 +585,7 @@ static struct {
 #ifdef GSSAPI
 	{ "gssapiauthentication", sGssAuthentication, SSHCFG_ALL },
 	{ "gssapicleanupcredentials", sGssCleanupCreds, SSHCFG_GLOBAL },
+	{ "gssapicleanupcreds", sGssCleanupCreds, SSHCFG_GLOBAL },
 	{ "gssapistrictacceptorcheck", sGssStrictAcceptor, SSHCFG_GLOBAL },
 	{ "gssapikeyexchange", sGssKeyEx, SSHCFG_GLOBAL },
 	{ "gssapistorecredentialsonrekey", sGssStoreRekey, SSHCFG_GLOBAL },
@@ -592,6 +593,7 @@ static struct {
 #else
 	{ "gssapiauthentication", sUnsupported, SSHCFG_ALL },
 	{ "gssapicleanupcredentials", sUnsupported, SSHCFG_GLOBAL },
+	{ "gssapicleanupcreds", sUnsupported, SSHCFG_GLOBAL },
 	{ "gssapistrictacceptorcheck", sUnsupported, SSHCFG_GLOBAL },
 	{ "gssapikeyexchange", sUnsupported, SSHCFG_GLOBAL },
 	{ "gssapistorecredentialsonrekey", sUnsupported, SSHCFG_GLOBAL },
