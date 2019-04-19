@@ -116,6 +116,9 @@ static const struct kexalg kexalgs[] = {
 	{ KEX_SNTRUP4591761X25519_SHA512, KEX_KEM_SNTRUP4591761X25519_SHA512, 0,
 	    SSH_DIGEST_SHA512 },
 #endif /* HAVE_EVP_SHA256 || !WITH_OPENSSL */
+	{ NULL, -1, -1, -1},
+};
+static const struct kexalg kexalg_prefixes[] = {
 #ifdef GSSAPI
 	{ KEX_GSS_GEX_SHA1_ID, KEX_GSS_GEX_SHA1, 0, SSH_DIGEST_SHA1 },
 	{ KEX_GSS_GRP1_SHA1_ID, KEX_GSS_GRP1_SHA1, 0, SSH_DIGEST_SHA1 },
@@ -159,12 +162,10 @@ kex_alg_by_name(const char *name)
 	for (k = kexalgs; k->name != NULL; k++) {
 		if (strcmp(k->name, name) == 0)
 			return k;
-#ifdef GSSAPI
-		if (strncmp(name, "gss-", 4) == 0) {
-			if (strncmp(k->name, name, strlen(k->name)) == 0)
-				return k;
-		}
-#endif
+	}
+	for (k = kexalg_prefixes; k->name != NULL; k++) {
+		if (strncmp(k->name, name, strlen(k->name)) == 0)
+			return k;
 	}
 	return NULL;
 }
