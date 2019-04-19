@@ -16,7 +16,6 @@
 
 #ifndef _PORT_LINUX_H
 #define _PORT_LINUX_H
-#include "packet.h"
 
 #ifdef WITH_SELINUX
 int ssh_selinux_enabled(void);
@@ -30,7 +29,5 @@ void ssh_selinux_setfscreatecon(const char *);
 void oom_adjust_restore(void);
 void oom_adjust_setup(void);
 #endif
-
-char *remote_hostname(struct ssh *);
 
 #endif /* ! _PORT_LINUX_H */
