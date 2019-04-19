@@ -218,6 +218,7 @@ static struct {
 	{ "gssapidelegatecredentials", oUnsupported },
 	{ "gssapitrustdns", oUnsupported },
 	{ "gssapiclientidentity", oUnsupported },
+	{ "gssapiserveridentity", oUnsupported },
 	{ "gssapirenewalforcesrekey", oUnsupported },
 	{ "gssapikexalgorithms", oUnsupported },
 #endif
