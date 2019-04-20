@@ -176,7 +176,7 @@ kexgss_client(struct ssh *ssh)
 				debug("Received GSSAPI_CONTINUE");
 				if (maj_status == GSS_S_COMPLETE)
 					fatal("GSSAPI Continue received from server when complete");
-				if ((r = sshpkt_get_string(ssh, &recv_tok.value, &strlen)) != 0 ||
+				if ((r = sshpkt_get_string(ssh, (u_char **)&recv_tok.value, &strlen)) != 0 ||
 				    (r = sshpkt_get_end(ssh)) != 0)
 					fatal("Failed to read token: %s", ssh_err(r));
 				recv_tok.length = strlen;
@@ -186,7 +186,7 @@ kexgss_client(struct ssh *ssh)
 				if (msg_tok.value != NULL)
 				        fatal("Received GSSAPI_COMPLETE twice?");
 				if ((r = sshpkt_getb_froms(ssh, &server_blob)) != 0 ||
-				    (r = sshpkt_get_string(ssh, &msg_tok.value, &strlen)) != 0)
+				    (r = sshpkt_get_string(ssh, (u_char **)&msg_tok.value, &strlen)) != 0)
 					fatal("Failed to read message: %s", ssh_err(r));
 				msg_tok.length = strlen;
 
@@ -194,7 +194,7 @@ kexgss_client(struct ssh *ssh)
 				if ((r = sshpkt_get_u8(ssh, &c)) != 0)
 					fatal("sshpkt failed: %s", ssh_err(r));
 				if (c) {
-					if ((r = sshpkt_get_string(ssh, &recv_tok.value,
+					if ((r = sshpkt_get_string(ssh, (u_char **)&recv_tok.value,
 					    &strlen)) != 0)
 						fatal("Failed to read token: %s", ssh_err(r));
 					recv_tok.length = strlen;
@@ -465,7 +465,7 @@ kexgssgex_client(struct ssh *ssh)
 				if (maj_status == GSS_S_COMPLETE)
 					fatal("GSSAPI Continue received from server when complete");
 				if ((r = sshpkt_get_string(ssh,
-				        &recv_tok.value, &strlen)) != 0 ||
+				        (u_char **)&recv_tok.value, &strlen)) != 0 ||
 				    (r = sshpkt_get_end(ssh)) != 0)
 					fatal("sshpkt failed: %s", ssh_err(r));
 				recv_tok.length = strlen;
@@ -476,7 +476,7 @@ kexgssgex_client(struct ssh *ssh)
 				        fatal("Received GSSAPI_COMPLETE twice?");
 				if ((r = sshpkt_getb_froms(ssh, &server_blob)) != 0 ||
 				    (r = sshpkt_get_string(ssh,
-				        &msg_tok.value, &strlen)) != 0)
+				        (u_char **)&msg_tok.value, &strlen)) != 0)
 					fatal("sshpkt failed: %s", ssh_err(r));
 				msg_tok.length = strlen;
 
@@ -485,7 +485,7 @@ kexgssgex_client(struct ssh *ssh)
 					fatal("sshpkt failed: %s", ssh_err(r));
 				if (c) {
 					if ((r = sshpkt_get_string(ssh,
-					        &recv_tok.value, &strlen)) != 0 ||
+					        (u_char **)&recv_tok.value, &strlen)) != 0 ||
 					    (r = sshpkt_get_end(ssh)) != 0)
 						fatal("sshpkt failed: %s", ssh_err(r));
 					recv_tok.length = strlen;
