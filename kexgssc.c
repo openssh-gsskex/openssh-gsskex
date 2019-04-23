@@ -56,7 +56,6 @@ kexgss_client(struct ssh *ssh)
 	    gssbuf, msg_tok = GSS_C_EMPTY_BUFFER, *token_ptr;
 	Gssctxt *ctxt;
 	OM_uint32 maj_status, min_status, ret_flags;
-	size_t strlen = 0;
 	struct sshbuf *server_blob = NULL;
 	struct sshbuf *shared_secret = NULL;
 	struct sshbuf *server_host_key_blob = NULL;
@@ -176,28 +175,27 @@ kexgss_client(struct ssh *ssh)
 				debug("Received GSSAPI_CONTINUE");
 				if (maj_status == GSS_S_COMPLETE)
 					fatal("GSSAPI Continue received from server when complete");
-				if ((r = sshpkt_get_string(ssh, &recv_tok.value, &strlen)) != 0 ||
+				if ((r = ssh_gssapi_sshpkt_get_buffer_desc(ssh,
+				        &recv_tok)) != 0 ||
 				    (r = sshpkt_get_end(ssh)) != 0)
 					fatal("Failed to read token: %s", ssh_err(r));
-				recv_tok.length = strlen;
 				break;
 			case SSH2_MSG_KEXGSS_COMPLETE:
 				debug("Received GSSAPI_COMPLETE");
 				if (msg_tok.value != NULL)
 				        fatal("Received GSSAPI_COMPLETE twice?");
 				if ((r = sshpkt_getb_froms(ssh, &server_blob)) != 0 ||
-				    (r = sshpkt_get_string(ssh, &msg_tok.value, &strlen)) != 0)
+				    (r = ssh_gssapi_sshpkt_get_buffer_desc(ssh,
+				        &msg_tok)) != 0)
 					fatal("Failed to read message: %s", ssh_err(r));
-				msg_tok.length = strlen;
 
 				/* Is there a token included? */
 				if ((r = sshpkt_get_u8(ssh, &c)) != 0)
 					fatal("sshpkt failed: %s", ssh_err(r));
 				if (c) {
-					if ((r = sshpkt_get_string(ssh, &recv_tok.value,
-					    &strlen)) != 0)
+					if ((r = ssh_gssapi_sshpkt_get_buffer_desc(
+					    ssh, &recv_tok)) != 0)
 						fatal("Failed to read token: %s", ssh_err(r));
-					recv_tok.length = strlen;
 					/* If we're already complete - protocol error */
 					if (maj_status == GSS_S_COMPLETE)
 						sshpkt_disconnect(ssh, "Protocol error: received token when complete");
@@ -327,7 +325,6 @@ kexgssgex_client(struct ssh *ssh)
 	struct sshbuf *shared_secret = NULL;
 	BIGNUM *p = NULL;
 	BIGNUM *g = NULL;
-	size_t strlen = 0;
 	struct sshbuf *buf = NULL;
 	struct sshbuf *server_host_key_blob = NULL;
 	struct sshbuf *server_blob = NULL;
@@ -464,31 +461,28 @@ kexgssgex_client(struct ssh *ssh)
 				debug("Received GSSAPI_CONTINUE");
 				if (maj_status == GSS_S_COMPLETE)
 					fatal("GSSAPI Continue received from server when complete");
-				if ((r = sshpkt_get_string(ssh,
-				        &recv_tok.value, &strlen)) != 0 ||
+				if ((r = ssh_gssapi_sshpkt_get_buffer_desc(ssh,
+				        &recv_tok)) != 0 ||
 				    (r = sshpkt_get_end(ssh)) != 0)
 					fatal("sshpkt failed: %s", ssh_err(r));
-				recv_tok.length = strlen;
 				break;
 			case SSH2_MSG_KEXGSS_COMPLETE:
 				debug("Received GSSAPI_COMPLETE");
 				if (msg_tok.value != NULL)
 				        fatal("Received GSSAPI_COMPLETE twice?");
 				if ((r = sshpkt_getb_froms(ssh, &server_blob)) != 0 ||
-				    (r = sshpkt_get_string(ssh,
-				        &msg_tok.value, &strlen)) != 0)
+				    (r = ssh_gssapi_sshpkt_get_buffer_desc(ssh,
+				        &msg_tok)) != 0)
 					fatal("sshpkt failed: %s", ssh_err(r));
-				msg_tok.length = strlen;
 
 				/* Is there a token included? */
 				if ((r = sshpkt_get_u8(ssh, &c)) != 0)
 					fatal("sshpkt failed: %s", ssh_err(r));
 				if (c) {
-					if ((r = sshpkt_get_string(ssh,
-					        &recv_tok.value, &strlen)) != 0 ||
+					if ((r = ssh_gssapi_sshpkt_get_buffer_desc(
+					        ssh, &recv_tok)) != 0 ||
 					    (r = sshpkt_get_end(ssh)) != 0)
 						fatal("sshpkt failed: %s", ssh_err(r));
-					recv_tok.length = strlen;
 					/* If we're already complete - protocol error */
 					if (maj_status == GSS_S_COMPLETE)
 						sshpkt_disconnect(ssh, "Protocol error: received token when complete");
