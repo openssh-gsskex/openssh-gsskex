@@ -67,7 +67,6 @@ kexgss_server(struct ssh *ssh)
 	gss_buffer_desc gssbuf, recv_tok, msg_tok;
 	gss_buffer_desc send_tok = GSS_C_EMPTY_BUFFER;
 	Gssctxt *ctxt = NULL;
-	size_t slen;
 	struct sshbuf *shared_secret = NULL;
 	struct sshbuf *client_pubkey = NULL;
 	struct sshbuf *server_pubkey = NULL;
@@ -75,7 +74,6 @@ kexgss_server(struct ssh *ssh)
 	int type = 0;
 	gss_OID oid;
 	char *mechs;
-	u_char *value = NULL;
 	u_char hash[SSH_DIGEST_MAX_LENGTH];
 	size_t hashlen;
 	int r;
@@ -108,12 +106,11 @@ kexgss_server(struct ssh *ssh)
 		case SSH2_MSG_KEXGSS_INIT:
 			if (client_pubkey != NULL)
 				fatal("Received KEXGSS_INIT after initialising");
-			if ((r = sshpkt_get_string(ssh, &value, &slen)) != 0 ||
+			if ((r = ssh_gssapi_sshpkt_get_buffer_desc(ssh,
+			        &recv_tok)) != 0 ||
 			    (r = sshpkt_getb_froms(ssh, &client_pubkey)) != 0 ||
 			    (r = sshpkt_get_end(ssh)) != 0)
 				fatal("sshpkt failed: %s", ssh_err(r));
-			recv_tok.value = value;
-			recv_tok.length = slen;
 
 			switch (kex->kex_type) {
 			case KEX_GSS_GRP1_SHA1:
@@ -140,11 +137,10 @@ kexgss_server(struct ssh *ssh)
 			/* Send SSH_MSG_KEXGSS_HOSTKEY here, if we want */
 			break;
 		case SSH2_MSG_KEXGSS_CONTINUE:
-			if ((r = sshpkt_get_string(ssh, &value, &slen)) != 0 ||
+			if ((r = ssh_gssapi_sshpkt_get_buffer_desc(ssh,
+			        &recv_tok)) != 0 ||
 			    (r = sshpkt_get_end(ssh)) != 0)
 				fatal("sshpkt failed: %s", ssh_err(r));
-			recv_tok.value = value;
-			recv_tok.length = slen;
 			break;
 		default:
 			sshpkt_disconnect(ssh,
@@ -266,7 +262,6 @@ kexgssgex_server(struct ssh *ssh)
 	gss_buffer_desc gssbuf, recv_tok, msg_tok;
 	gss_buffer_desc send_tok = GSS_C_EMPTY_BUFFER;
 	Gssctxt *ctxt = NULL;
-	size_t slen;
 	struct sshbuf *shared_secret = NULL;
 	int type = 0;
 	gss_OID oid;
@@ -278,7 +273,6 @@ kexgssgex_server(struct ssh *ssh)
 	int min = -1, max = -1, nbits = -1;
 	int cmin = -1, cmax = -1; /* client proposal */
 	struct sshbuf *empty = sshbuf_new();
-	u_char *value = NULL;
 	int r;
 
 	/* Initialise GSSAPI */
@@ -347,21 +341,19 @@ kexgssgex_server(struct ssh *ssh)
 		case SSH2_MSG_KEXGSS_INIT:
 			if (dh_client_pub != NULL)
 				fatal("Received KEXGSS_INIT after initialising");
-			if ((r = sshpkt_get_string(ssh, &value, &slen)) != 0 ||
+			if ((r = ssh_gssapi_sshpkt_get_buffer_desc(ssh,
+			        &recv_tok)) != 0 ||
 			    (r = sshpkt_get_bignum2(ssh, &dh_client_pub)) != 0 ||
 			    (r = sshpkt_get_end(ssh)) != 0)
 				fatal("sshpkt failed: %s", ssh_err(r));
-			recv_tok.value = value;
-			recv_tok.length = slen;
 
 			/* Send SSH_MSG_KEXGSS_HOSTKEY here, if we want */
 			break;
 		case SSH2_MSG_KEXGSS_CONTINUE:
-			if ((r = sshpkt_get_string(ssh, &value, &slen)) != 0 ||
+			if ((r = ssh_gssapi_sshpkt_get_buffer_desc(ssh,
+			        &recv_tok)) != 0 ||
 			    (r = sshpkt_get_end(ssh)) != 0)
 				fatal("sshpkt failed: %s", ssh_err(r));
-			recv_tok.value = value;
-			recv_tok.length = slen;
 			break;
 		default:
 			sshpkt_disconnect(ssh,
