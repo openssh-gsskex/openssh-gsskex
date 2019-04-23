@@ -84,6 +84,21 @@ ssh_gssapi_get_buffer_desc(struct sshbuf *b, gss_buffer_desc *g)
 	return 0;
 }
 
+/* sshpkt_get of gss_buffer_desc */
+int
+ssh_gssapi_sshpkt_get_buffer_desc(struct ssh *ssh, gss_buffer_desc *g)
+{
+	int r;
+	u_char *p;
+	size_t len;
+
+	if ((r = sshpkt_get_string(ssh, &p, &len)) != 0)
+		return r;
+	g->value = p;
+	g->length = len;
+	return 0;
+}
+
 /*
  * Return a list of the gss-group1-sha1 mechanisms supported by this program
  *
