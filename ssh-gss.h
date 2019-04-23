@@ -134,6 +134,7 @@ OM_uint32 ssh_gssapi_test_oid_supported(OM_uint32 *, gss_OID, int *);
 
 struct sshbuf;
 int ssh_gssapi_get_buffer_desc(struct sshbuf *, gss_buffer_desc *);
+int ssh_gssapi_sshpkt_get_buffer_desc(struct ssh *, gss_buffer_desc *);
 
 OM_uint32 ssh_gssapi_import_name(Gssctxt *, const char *);
 OM_uint32 ssh_gssapi_init_ctx(Gssctxt *, int,
