@@ -190,6 +190,7 @@ struct kex {
 
 int	 kex_names_valid(const char *);
 char	*kex_alg_list(char);
+char	*kex_gss_alg_list(char);
 char	*kex_names_cat(const char *, const char *);
 int	 kex_assemble_names(char **, const char *, const char *);
 int	 gss_kex_names_valid(const char *);

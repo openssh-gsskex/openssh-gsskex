@@ -736,6 +736,8 @@ main(int ac, char **av)
 				cp = mac_alg_list('\n');
 			else if (strcmp(optarg, "kex") == 0)
 				cp = kex_alg_list('\n');
+			else if (strcmp(optarg, "kex-gss") == 0)
+				cp = kex_gss_alg_list('\n');
 			else if (strcmp(optarg, "key") == 0)
 				cp = sshkey_alg_list(0, 0, 0, '\n');
 			else if (strcmp(optarg, "key-cert") == 0)
@@ -748,7 +750,7 @@ main(int ac, char **av)
 				cp = xstrdup("2");
 			else if (strcmp(optarg, "help") == 0) {
 				cp = xstrdup(
-				    "cipher\ncipher-auth\nkex\nkey\n"
+				    "cipher\ncipher-auth\nkex\nkex-gss\nkey\n"
 				    "key-cert\nkey-plain\nmac\n"
 				    "protocol-version\nsig");
 			}

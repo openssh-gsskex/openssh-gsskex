@@ -118,7 +118,7 @@ static const struct kexalg kexalgs[] = {
 #endif /* HAVE_EVP_SHA256 || !WITH_OPENSSL */
 	{ NULL, -1, -1, -1},
 };
-static const struct kexalg kexalg_prefixes[] = {
+static const struct kexalg gss_kexalgs[] = {
 #ifdef GSSAPI
 	{ KEX_GSS_GEX_SHA1_ID, KEX_GSS_GEX_SHA1, 0, SSH_DIGEST_SHA1 },
 	{ KEX_GSS_GRP1_SHA1_ID, KEX_GSS_GRP1_SHA1, 0, SSH_DIGEST_SHA1 },
@@ -132,14 +132,14 @@ static const struct kexalg kexalg_prefixes[] = {
 	{ NULL, -1, -1, -1 },
 };
 
-char *
-kex_alg_list(char sep)
+static char *
+kex_alg_list_internal(char sep, const struct kexalg *algs)
 {
 	char *ret = NULL, *tmp;
 	size_t nlen, rlen = 0;
 	const struct kexalg *k;
 
-	for (k = kexalgs; k->name != NULL; k++) {
+	for (k = algs; k->name != NULL; k++) {
 		if (ret != NULL)
 			ret[rlen++] = sep;
 		nlen = strlen(k->name);
@@ -154,6 +154,18 @@ kex_alg_list(char sep)
 	return ret;
 }
 
+char *
+kex_alg_list(char sep)
+{
+	return kex_alg_list_internal(sep, kexalgs);
+}
+
+char *
+kex_gss_alg_list(char sep)
+{
+	return kex_alg_list_internal(sep, gss_kexalgs);
+}
+
 static const struct kexalg *
 kex_alg_by_name(const char *name)
 {
@@ -163,7 +175,7 @@ kex_alg_by_name(const char *name)
 		if (strcmp(k->name, name) == 0)
 			return k;
 	}
-	for (k = kexalg_prefixes; k->name != NULL; k++) {
+	for (k = gss_kexalgs; k->name != NULL; k++) {
 		if (strncmp(k->name, name, strlen(k->name)) == 0)
 			return k;
 	}
