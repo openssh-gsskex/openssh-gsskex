@@ -42,8 +42,10 @@
 #include "log.h"
 #include "ssh2.h"
 #include "cipher.h"
+#include "sshkey.h"
 #include "kex.h"
 #include "digest.h"
+#include "packet.h"
 
 #include "ssh-gss.h"
 
