@@ -1027,7 +1027,7 @@ parse_time:
 		if (!arg || *arg == '\0')
 			fatal("%.200s line %d: Missing argument.",
 			    filename, linenum);
-		if (!gss_kex_names_valid(arg))
+		if (!kex_gss_names_valid(arg))
 			fatal("%.200s line %d: Bad GSSAPI KexAlgorithms '%s'.",
 			    filename, linenum, arg ? arg : "<NONE>");
 		if (*activep && options->gss_kex_algorithms == NULL)

@@ -337,7 +337,7 @@ kex_assemble_names(char **listp, const char *def, const char *all)
 
 /* Validate GSS KEX method name list */
 int
-gss_kex_names_valid(const char *names)
+kex_gss_names_valid(const char *names)
 {
 	char *s, *cp, *p;
 
