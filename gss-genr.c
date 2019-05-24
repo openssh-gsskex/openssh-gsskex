@@ -126,7 +126,8 @@ ssh_gssapi_kex_mechs(gss_OID_set gss_supported, ssh_gssapi_check_fn *check,
     const char *host, const char *client, const char *kex) {
 	struct sshbuf *buf = NULL;
 	size_t i;
-	int r, oidpos, enclen;
+	int r = SSH_ERR_ALLOC_FAIL;
+	int oidpos, enclen;
 	char *mechs, *encoded;
 	u_char digest[SSH_DIGEST_MAX_LENGTH];
 	char deroid[2];
