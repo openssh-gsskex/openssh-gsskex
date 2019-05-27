@@ -59,7 +59,7 @@ kexgss_client(struct ssh *ssh)
 	struct sshbuf *server_blob = NULL;
 	struct sshbuf *shared_secret = NULL;
 	struct sshbuf *server_host_key_blob = NULL;
-	struct sshbuf *empty = sshbuf_new();
+	struct sshbuf *empty = NULL;
 	u_char *msg;
 	int type = 0;
 	int first = 1;
@@ -267,6 +267,11 @@ kexgss_client(struct ssh *ssh)
 	if (r != 0)
 		goto out;
 
+	if ((empty = sshbuf_new()) == NULL) {
+		r = SSH_ERR_ALLOC_FAIL;
+		goto out;
+	}
+
 	hashlen = sizeof(hash);
 	if ((r = kex_gen_hash(
 	    kex->hash_alg,
@@ -336,7 +341,7 @@ kexgssgex_client(struct ssh *ssh)
 	size_t hashlen;
 	const BIGNUM *pub_key, *dh_p, *dh_g;
 	int nbits = 0, min = DH_GRP_MIN, max = DH_GRP_MAX;
-	struct sshbuf *empty = sshbuf_new();
+	struct sshbuf *empty = NULL;
 	u_char c;
 	int r;
 
@@ -528,6 +533,7 @@ kexgssgex_client(struct ssh *ssh)
 	    (r = sshbuf_get_bignum2(buf, &dh_server_pub)) != 0)
 		goto out;
 	sshbuf_free(buf);
+	buf = NULL;
 
 	if ((shared_secret = sshbuf_new()) == NULL) {
 		r = SSH_ERR_ALLOC_FAIL;
@@ -536,6 +542,10 @@ kexgssgex_client(struct ssh *ssh)
 
 	if ((r = kex_dh_compute_key(kex, dh_server_pub, shared_secret)) != 0)
 		goto out;
+	if ((empty = sshbuf_new()) == NULL) {
+		r = SSH_ERR_ALLOC_FAIL;
+		goto out;
+	}
 
 	DH_get0_pqg(kex->dh, &dh_p, NULL, &dh_g);
 	hashlen = sizeof(hash);
@@ -582,6 +592,7 @@ kexgssgex_client(struct ssh *ssh)
 	if ((r = kex_derive_keys(ssh, hash, hashlen, shared_secret)) == 0)
 		r = kex_send_newkeys(ssh);
 out:
+	sshbuf_free(buf);
 	sshbuf_free(server_blob);
 	sshbuf_free(empty);
 	explicit_bzero(hash, sizeof(hash));
