@@ -23,4 +23,4 @@ before_script:
 script:
   - make
   - # make tests
-  - make tests $TESTS
+  - make tests $TESTS TEST_SSH_CONCH=no
