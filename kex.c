@@ -131,7 +131,7 @@ static const struct kexalg gss_kexalgs[] = {
 	    NID_X9_62_prime256v1, SSH_DIGEST_SHA256 },
 	{ KEX_GSS_C25519_SHA256_ID, KEX_GSS_C25519_SHA256, 0, SSH_DIGEST_SHA256 },
 #endif
-	{ NULL, 0, -1, -1 },
+	{ NULL, 0, -1, -1},
 };
 
 static char *
