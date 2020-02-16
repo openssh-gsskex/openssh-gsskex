@@ -797,7 +797,9 @@ userauth_gssapi(struct ssh *ssh)
 	 * once. */
 
 	if (authctxt->gss_supported_mechs == NULL)
-		if (GSS_ERROR(gss_indicate_mechs(&min, &authctxt->gss_supported_mechs))) {
+		if (GSS_ERROR(gss_indicate_mechs(&min,
+		    &authctxt->gss_supported_mechs))) {
+			authctxt->gss_supported_mechs = NULL;
 			free(gss_host);
 			return 0;
 		}
