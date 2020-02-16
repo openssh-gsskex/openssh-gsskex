@@ -148,8 +148,8 @@ int mm_answer_gss_setup_ctx(struct ssh *, int, struct sshbuf *);
 int mm_answer_gss_accept_ctx(struct ssh *, int, struct sshbuf *);
 int mm_answer_gss_userok(struct ssh *, int, struct sshbuf *);
 int mm_answer_gss_checkmic(struct ssh *, int, struct sshbuf *);
-int mm_answer_gss_sign(struct ssh*, int, struct sshbuf *);
-int mm_answer_gss_updatecreds(struct ssh*, int, struct sshbuf *);
+int mm_answer_gss_sign(struct ssh *, int, struct sshbuf *);
+int mm_answer_gss_updatecreds(struct ssh *, int, struct sshbuf *);
 #endif
 
 #ifdef SSH_AUDIT_EVENTS
