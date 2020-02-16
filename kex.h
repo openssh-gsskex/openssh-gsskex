@@ -219,7 +219,7 @@ int	 kexgex_client(struct ssh *);
 int	 kexgex_server(struct ssh *);
 int	 kex_gen_client(struct ssh *);
 int	 kex_gen_server(struct ssh *);
-#ifdef GSSAPI
+#if defined(GSSAPI) && defined(WITH_OPENSSL)
 int	 kexgssgex_client(struct ssh *);
 int	 kexgssgex_server(struct ssh *);
 int	 kexgss_client(struct ssh *);
