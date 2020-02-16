@@ -118,7 +118,7 @@ static const struct kexalg kexalgs[] = {
 	{ KEX_SNTRUP4591761X25519_SHA512, KEX_KEM_SNTRUP4591761X25519_SHA512, 0,
 	    SSH_DIGEST_SHA512 },
 #endif /* HAVE_EVP_SHA256 || !WITH_OPENSSL */
-	{ NULL, -1, -1, -1},
+	{ NULL, 0, -1, -1},
 };
 static const struct kexalg gss_kexalgs[] = {
 #ifdef GSSAPI
