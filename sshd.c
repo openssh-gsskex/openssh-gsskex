@@ -124,10 +124,6 @@
 #include "ssherr.h"
 #include "sk-api.h"
 
-#ifdef USE_SECURITY_SESSION_API
-#include <Security/AuthSession.h>
-#endif
-
 /* Re-exec fds */
 #define REEXEC_DEVCRYPTO_RESERVED_FD	(STDERR_FILENO + 1)
 #define REEXEC_STARTUP_PIPE_FD		(STDERR_FILENO + 2)
@@ -2147,60 +2143,6 @@ main(int ac, char **av)
 	    rdomain == NULL ? "" : rdomain,
 	    rdomain == NULL ? "" : "\"");
 	free(laddr);
-
-#ifdef USE_SECURITY_SESSION_API
-	/*
-	 * Create a new security session for use by the new user login if
-	 * the current session is the root session or we are not launched
-	 * by inetd (eg: debugging mode or server mode).  We do not
-	 * necessarily need to create a session if we are launched from
-	 * inetd because Panther xinetd will create a session for us.
-	 *
-	 * The only case where this logic will fail is if there is an
-	 * inetd running in a non-root session which is not creating
-	 * new sessions for us.  Then all the users will end up in the
-	 * same session (bad).
-	 *
-	 * When the client exits, the session will be destroyed for us
-	 * automatically.
-	 *
-	 * We must create the session before any credentials are stored
-	 * (including AFS pags, which happens a few lines below).
-	 */
-	{
-		OSStatus err = 0;
-		SecuritySessionId sid = 0;
-		SessionAttributeBits sattrs = 0;
-
-		err = SessionGetInfo(callerSecuritySession, &sid, &sattrs);
-		if (err)
-			error("SessionGetInfo() failed with error %.8X",
-			    (unsigned) err);
-		else
-			debug("Current Session ID is %.8X / Session Attributes are %.8X",
-			    (unsigned) sid, (unsigned) sattrs);
-
-		if (inetd_flag && !(sattrs & sessionIsRoot))
-			debug("Running in inetd mode in a non-root session... "
-			    "assuming inetd created the session for us.");
-		else {
-			debug("Creating new security session...");
-			err = SessionCreate(0, sessionHasTTY | sessionIsRemote);
-			if (err)
-				error("SessionCreate() failed with error %.8X",
-				    (unsigned) err);
-
-			err = SessionGetInfo(callerSecuritySession, &sid, 
-			    &sattrs);
-			if (err)
-				error("SessionGetInfo() failed with error %.8X",
-				    (unsigned) err);
-			else
-				debug("New Session ID is %.8X / Session Attributes are %.8X",
-				    (unsigned) sid, (unsigned) sattrs);
-		}
-	}
-#endif
 
 	/*
 	 * We don't want to listen forever unless the other side
