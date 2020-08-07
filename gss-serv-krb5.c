@@ -120,8 +120,8 @@ ssh_gssapi_krb5_storecreds(ssh_gssapi_client *client)
 	krb5_error_code problem;
 	krb5_principal princ;
 	OM_uint32 maj_status, min_status;
-	const char *errmsg;
 	const char *new_ccname;
+	const char *errmsg;
 
 	if (client->creds == NULL) {
 		debug("No credentials stored");
@@ -197,6 +197,8 @@ ssh_gssapi_krb5_storecreds(ssh_gssapi_client *client)
 #endif
 
 	krb5_cc_close(krb_context, ccache);
+
+	client->store.data = krb_context;
 
 	return;
 }
