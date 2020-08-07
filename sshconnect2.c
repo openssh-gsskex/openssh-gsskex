@@ -222,6 +222,7 @@ ssh_kex2(struct ssh *ssh, char *host, struct sockaddr *hostaddr, u_short port)
 			/* Fall back to specified host if we are using proxy command
 			 * and can not use DNS on that socket */
 			if (strcmp(gss_host, "UNKNOWN") == 0) {
+				free(gss_host);
 				gss_host = xstrdup(host);
 			}
 		} else {
@@ -799,7 +800,8 @@ userauth_gssapi(struct ssh *ssh)
 		/* Fall back to specified host if we are using proxy command
 		 * and can not use DNS on that socket */
 		if (strcmp(gss_host, "UNKNOWN") == 0) {
-			gss_host = authctxt->host;
+			free(gss_host);
+			gss_host = xstrdup(authctxt->host);
 		}
 	} else {
 		gss_host = xstrdup(authctxt->host);
