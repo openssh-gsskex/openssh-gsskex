@@ -64,7 +64,7 @@ kexgss_server(struct ssh *ssh)
 	 */
 
 	OM_uint32 ret_flags = 0;
-	gss_buffer_desc gssbuf, recv_tok, msg_tok;
+	gss_buffer_desc gssbuf = {0, NULL}, recv_tok, msg_tok;
 	gss_buffer_desc send_tok = GSS_C_EMPTY_BUFFER;
 	Gssctxt *ctxt = NULL;
 	struct sshbuf *shared_secret = NULL;
@@ -104,7 +104,7 @@ kexgss_server(struct ssh *ssh)
 		type = ssh_packet_read(ssh);
 		switch(type) {
 		case SSH2_MSG_KEXGSS_INIT:
-			if (client_pubkey != NULL)
+			if (gssbuf.value != NULL)
 				fatal("Received KEXGSS_INIT after initialising");
 			if ((r = ssh_gssapi_sshpkt_get_buffer_desc(ssh,
 			        &recv_tok)) != 0 ||
@@ -135,6 +135,31 @@ kexgss_server(struct ssh *ssh)
 				goto out;
 
 			/* Send SSH_MSG_KEXGSS_HOSTKEY here, if we want */
+
+			/* Calculate the hash early so we can free the
+			* client_pubkey, which has reference to the parent
+			* buffer state->incoming_packet
+			*/
+			hashlen = sizeof(hash);
+			if ((r = kex_gen_hash(
+			    kex->hash_alg,
+			    kex->client_version,
+			    kex->server_version,
+			    kex->peer,
+			    kex->my,
+			    empty,
+			    client_pubkey,
+			    server_pubkey,
+			    shared_secret,
+			    hash, &hashlen)) != 0)
+				goto out;
+
+			gssbuf.value = hash;
+			gssbuf.length = hashlen;
+
+			sshbuf_free(client_pubkey);
+			client_pubkey = NULL;
+
 			break;
 		case SSH2_MSG_KEXGSS_CONTINUE:
 			if ((r = ssh_gssapi_sshpkt_get_buffer_desc(ssh,
@@ -156,7 +181,7 @@ kexgss_server(struct ssh *ssh)
 		if (maj_status != GSS_S_COMPLETE && send_tok.length == 0)
 			fatal("Zero length token output when incomplete");
 
-		if (client_pubkey == NULL)
+		if (gssbuf.value == NULL)
 			fatal("No client public key");
 
 		if (maj_status & GSS_S_CONTINUE_NEEDED) {
@@ -184,23 +209,6 @@ kexgss_server(struct ssh *ssh)
 
 	if (!(ret_flags & GSS_C_INTEG_FLAG))
 		fatal("Integrity flag wasn't set");
-
-	hashlen = sizeof(hash);
-	if ((r = kex_gen_hash(
-	    kex->hash_alg,
-	    kex->client_version,
-	    kex->server_version,
-	    kex->peer,
-	    kex->my,
-	    empty,
-	    client_pubkey,
-	    server_pubkey,
-	    shared_secret,
-	    hash, &hashlen)) != 0)
-		goto out;
-
-	gssbuf.value = hash;
-	gssbuf.length = hashlen;
 
 	if (GSS_ERROR(PRIVSEP(ssh_gssapi_sign(ctxt, &gssbuf, &msg_tok))))
 		fatal("Couldn't get MIC");

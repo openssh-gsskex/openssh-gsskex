@@ -162,11 +162,16 @@ kexgss_client(struct ssh *ssh)
 			do {
 				type = ssh_packet_read(ssh);
 				if (type == SSH2_MSG_KEXGSS_HOSTKEY) {
+					char *tmp = NULL;
+					size_t tmp_len = 0;
+
 					debug("Received KEXGSS_HOSTKEY");
 					if (server_host_key_blob)
 						fatal("Server host key received more than once");
-					if ((r = sshpkt_getb_froms(ssh, &server_host_key_blob)) != 0)
+					if ((r = sshpkt_get_string(ssh, &tmp, &tmp_len)) != 0)
 						fatal("Failed to read server host key: %s", ssh_err(r));
+					if ((server_host_key_blob = sshbuf_from(tmp, tmp_len)) == NULL)
+						fatal("sshbuf_from failed");
 				}
 			} while (type == SSH2_MSG_KEXGSS_HOSTKEY);
 
@@ -453,11 +458,16 @@ kexgssgex_client(struct ssh *ssh)
 			do {
 				type = ssh_packet_read(ssh);
 				if (type == SSH2_MSG_KEXGSS_HOSTKEY) {
+					char *tmp = NULL;
+					size_t tmp_len = 0;
+
 					debug("Received KEXGSS_HOSTKEY");
 					if (server_host_key_blob)
 						fatal("Server host key received more than once");
-					if ((r = sshpkt_getb_froms(ssh, &server_host_key_blob)) != 0)
+					if ((r = sshpkt_get_string(ssh, &tmp, &tmp_len)) != 0)
 						fatal("sshpkt failed: %s", ssh_err(r));
+					if ((server_host_key_blob = sshbuf_from(tmp, tmp_len)) == NULL)
+						fatal("sshbuf_from failed");
 				}
 			} while (type == SSH2_MSG_KEXGSS_HOSTKEY);
 
